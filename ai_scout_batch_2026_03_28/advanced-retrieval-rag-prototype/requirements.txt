@@ -1,0 +1,40 @@
+# Core NLP and LLM related
+openai>=1.14.0
+anthropic>=0.19.0
+langchain>=0.1.13
+langchain-community>=0.0.29
+langchain-openai>=0.1.0
+llama-index>=0.10.16
+llama-index-llms-openai>=0.1.6
+transformers>=4.38.0
+sentence-transformers>=2.2.2
+torch>=2.2.0 # Deep learning framework, often required by transformers/sentence-transformers
+accelerate>=0.28.0 # Often used with transformers for efficient inference
+
+# Vector Databases
+chromadb>=0.4.24
+faiss-cpu>=1.7.4 # For FAISS vector store (CPU version)
+weaviate-client>=4.5.0
+
+# Graph Databases
+networkx>=3.2.1 # For in-memory graph representation
+neo4j>=5.20.0 # Official Neo4j Python driver
+
+# Keyword Search
+rank_bm25>=0.2.2 # For BM25 keyword retrieval
+
+# Document Loading and Preprocessing
+beautifulsoup4>=4.12.3 # For parsing HTML/XML (web pages)
+requests>=2.31.0 # For making HTTP requests (web pages)
+pypdf>=4.0.0 # For PDF document loading
+nltk>=3.8.1 # For natural language toolkit utilities (tokenization, stop words, etc.)
+spacy>=3.7.4 # For advanced NLP, entity extraction, relation extraction
+
+# Utilities and Configuration
+python-dotenv>=1.0.1 # For managing environment variables
+tqdm>=4.66.2 # For progress bars
+numpy>=1.26.4 # For numerical operations, especially with embeddings
+pandas>=2.2.1 # For data manipulation, especially with structured data
+
+# Testing
+pytest>=8.1.1 # For unit and integration testing
