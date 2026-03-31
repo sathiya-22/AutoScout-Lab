@@ -1,0 +1,7 @@
+torch>=2.0.0,<3.0.0
+triton>=2.1.0,<3.0.0
+numpy>=1.20.0,<2.0.0
+typing_extensions>=4.0.0 # For advanced type hinting, especially helpful in a library
+# Note: pybind11 is typically a build-time dependency handled by torch.utils.cpp_extension,
+# and thus not usually listed as a direct runtime requirement for users.
+# setuptools and wheel are build system requirements and should be specified in pyproject.toml or setup.py.
