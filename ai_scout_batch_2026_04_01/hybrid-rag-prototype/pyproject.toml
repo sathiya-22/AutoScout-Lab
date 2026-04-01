@@ -1,0 +1,113 @@
+```toml
+[project]
+name = "hybrid-rag-system"
+version = "0.1.0"
+description = "A Hybrid Semantic and Logical Retrieval system for advanced RAG"
+authors = [
+    { name = "AI Developer Team", email = "ai.dev@example.com" },
+]
+license = { text = "MIT" }
+readme = "README.md"
+requires-python = ">=3.9"
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Text Processing :: General",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+dependencies = [
+    # Core utilities and data handling
+    "pydantic>=2.0.0,<3.0.0",          # Data validation and settings management
+    "python-dotenv>=1.0.0,<2.0.0",      # Environment variable management
+    "loguru>=0.7.0,<1.0.0",             # Enhanced logging library
+
+    # Document Loaders & Parsers
+    "unstructured[all-docs]>=0.12.0,<1.0.0", # Comprehensive document loader and parsing
+    "beautifulsoup4>=4.12.0,<5.0.0",    # For HTML parsing in tabular_data_parser
+    "pandas>=2.0.0,<3.0.0",             # For tabular data manipulation (tabular_data_parser)
+    "tree-sitter>=0.21.0,<1.0.0",       # For Abstract Syntax Tree (AST) analysis (code_ast_parser)
+    "tree-sitter-languages>=1.0.0,<2.0.0", # Pre-compiled grammars for tree-sitter
+
+    # Embedding Generation
+    "sentence-transformers>=2.2.0,<3.0.0", # General purpose text and code embeddings
+    "tiktoken>=0.6.0,<1.0.0",           # Token counting for OpenAI models
+
+    # Multi-Modal Indexing & Storage Clients
+    "qdrant-client>=1.8.0,<2.0.0",      # Client for Qdrant vector database (vector_store_manager)
+    "neo4j>=5.17.0,<6.0.0",             # Client for Neo4j graph database (graph_store_manager)
+
+    # LLM Integrations
+    "openai>=1.0.0,<2.0.0",              # Official OpenAI API client
+    "anthropic>=0.19.0,<1.0.0",         # Official Anthropic API client
+    "httpx>=0.27.0,<1.0.0",             # Async HTTP client, often a dependency for LLM clients
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0,<8.0.0",              # Testing framework
+    "pytest-cov>=4.0.0,<5.0.0",          # Test coverage reporting
+    "black>=23.0.0,<25.0.0",             # Code formatter
+    "ruff>=0.1.0,<0.2.0",                # Fast Python linter and formatter (can replace isort)
+    "isort>=5.0.0,<6.0.0",               # Import sorter (if not using ruff for sorting)
+]
+
+[project.urls]
+"Homepage" = "https://github.com/your-username/hybrid-rag-system"
+"Bug Tracker" = "https://github.com/your-username/hybrid-rag-system/issues"
+
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+package-dir = {"" = "src"} # Specifies that packages are in the 'src' directory
+
+[tool.setuptools.packages.find]
+where = ["src"] # Tells setuptools to look for packages in 'src/'
+
+[tool.black]
+line-length = 120
+target-version = ['py39', 'py310', 'py311', 'py312']
+
+[tool.ruff]
+line-length = 120
+target-version = "py39" # Set minimum Python version for Ruff
+select = [
+    "E",  # Error
+    "F",  # Pyflakes
+    "I",  # Isort
+    "N",  # Naming conventions
+    "D",  # Docstrings
+    "W",  # Warnings
+    "B",  # Bugbear
+    "C",  # Complexity (e.g., McCabe)
+    "Q",  # Quotes
+    "S",  # Security warnings
+]
+ignore = [
+    "D100", # Missing docstring in public module
+    "D104", # Missing docstring in public package (__init__.py)
+    "D105", # Missing docstring in public method
+    "D107", # Missing docstring in __init__
+    "D203", # One-line docstring should not end with a period
+    "D212", # Multi-line docstring should start with one-line summary
+]
+src = ["src"] # Tell ruff to look for source files in the 'src' directory
+
+[tool.ruff.isort]
+known-first-party = ["src"] # Helps ruff's isort organize imports correctly
+
+[tool.pytest.ini_options]
+pythonpath = ["src"] # Add 'src' to the Python path for tests
+addopts = "--import-mode=importlib --cov=src --cov-report=term-missing" # Test coverage with missing lines
+testpaths = "tests" # Specify the directory for tests
+```
