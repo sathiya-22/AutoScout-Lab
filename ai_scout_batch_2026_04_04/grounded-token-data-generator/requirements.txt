@@ -1,0 +1,11 @@
+python-dotenv
+requests
+openai
+transformers
+sentence-transformers
+scikit-learn
+spacy
+pandas
+fastapi
+uvicorn[standard]
+pydantic
