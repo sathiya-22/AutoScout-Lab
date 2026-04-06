@@ -1,0 +1,17 @@
+pydantic
+python-dotenv
+PyYAML
+openai
+huggingface_hub
+transformers
+sentence-transformers
+langchain
+pinecone-client
+weaviate-client
+qdrant-client
+opensearch-py
+elasticsearch
+numpy
+loguru
+fastapi
+uvicorn
