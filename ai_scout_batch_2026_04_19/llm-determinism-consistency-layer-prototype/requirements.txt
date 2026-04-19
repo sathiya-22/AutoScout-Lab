@@ -1,0 +1,14 @@
+anthropic
+faker
+huggingface-hub
+langchain
+numpy
+openai
+python-dotenv
+pydantic
+pytest
+pytest-cov
+PyYAML
+tenacity
+tiktoken
+transformers

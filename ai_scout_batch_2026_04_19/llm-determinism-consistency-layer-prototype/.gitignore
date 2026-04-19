@@ -1,0 +1,66 @@
+# Python
+__pycache__/
+*.pyc
+*.pyd
+*.so
+.Python
+build/
+dist/
+*.egg-info/
+.eggs/
+*.egg
+
+# Virtual environment
+.venv/
+venv/
+env/
+VENV/
+venv.bak/
+venv.root/
+
+# Editor/IDE files
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+*.swp
+*.swo
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Logs and temporary files
+*.log
+*.tmp
+tmp/
+
+# Environment variables
+.env
+.flaskenv
+
+# Configuration files that might contain sensitive data
+config.py  # If specific to local environment or contains API keys. Consider `config.py.example` for version control.
+settings.py  # Similar to config.py
+
+# Generated output or cache files (specific to LLM outputs/caches)
+# Add specific patterns here as the project evolves, e.g.,
+# llm_cache/
+# generated_responses/
+# model_checkpoints/
+
+# Data files that are large or should not be version controlled
+# The project context says `data/` contains example data, schemas, ground truth for testing.
+# So, `data/` itself should likely be versioned. However, if it contains
+# very large generated data or user-specific data, patterns would go here:
+# data/*.jsonl
+# data/large_datasets/
+
+# Test output
+.pytest_cache/
+htmlcov/
+.coverage
+
+# Compiled files
+*.mo
+*.pot
