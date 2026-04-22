@@ -1,0 +1,87 @@
+```json
+{
+  "document_summary_example_1": {
+    "description": "Expected concise summary for a document discussing recent AI ethics guidelines.",
+    "type": "string",
+    "expected_value": "The latest AI ethics guidelines emphasize transparency, fairness, accountability, and user privacy in the development and deployment of artificial intelligence systems, advocating for human oversight and risk assessment.",
+    "validation_criteria": {
+      "method": "keyword_presence_and_length",
+      "min_length": 100,
+      "max_length": 200,
+      "required_keywords": ["AI ethics", "transparency", "fairness", "accountability", "privacy", "human oversight"],
+      "optional_keywords": ["risk assessment", "development", "deployment"]
+    }
+  },
+  "structured_data_extraction_user_profile_2": {
+    "description": "Expected JSON output for extracting user information from a support ticket.",
+    "type": "json",
+    "expected_value": {
+      "user_id": "USR-7890",
+      "name": "Jane Doe",
+      "email": "jane.doe@example.com",
+      "issue_type": "Billing Inquiry",
+      "priority": "High"
+    },
+    "validation_criteria": {
+      "method": "json_schema_and_value_match",
+      "schema_name": "user_profile_schema_v1",
+      "key_value_matches": {
+        "issue_type": "Billing Inquiry",
+        "priority": "High"
+      }
+    }
+  },
+  "code_generation_python_utility_function_3": {
+    "description": "Expected Python code for a simple utility function to calculate factorial.",
+    "type": "string",
+    "expected_value": "def factorial(n):\n    if n == 0:\n        return 1\n    else:\n        return n * factorial(n-1)",
+    "validation_criteria": {
+      "method": "semantic_code_comparison",
+      "required_elements": ["def factorial(n):", "if n == 0:", "return 1", "return n * factorial(n-1)"],
+      "functional_test_cases": [
+        {"input": 0, "output": 1},
+        {"input": 1, "output": 1},
+        {"input": 5, "output": 120}
+      ]
+    }
+  },
+  "translation_german_to_english_greeting_4": {
+    "description": "Expected English translation of a standard German greeting.",
+    "type": "string",
+    "expected_value": "Hello, how are you?",
+    "validation_criteria": {
+      "method": "embedding_similarity",
+      "min_similarity_score": 0.85
+    }
+  },
+  "sentiment_analysis_product_review_5": {
+    "description": "Expected sentiment analysis result for a given product review text.",
+    "type": "json",
+    "expected_value": {
+      "overall_sentiment": "Positive",
+      "confidence": 0.95,
+      "keywords": ["excellent", "fast delivery", "great value"]
+    },
+    "validation_criteria": {
+      "method": "fuzzy_value_match",
+      "key_value_rules": {
+        "overall_sentiment": {"expected": "Positive", "case_sensitive": false},
+        "confidence": {"min": 0.90, "max": 1.0},
+        "keywords": {"contains_any": ["excellent", "great", "fantastic"]}
+      }
+    }
+  },
+  "decision_making_customer_service_routing_6": {
+    "description": "Expected routing decision for a customer service inquiry about a technical issue.",
+    "type": "json",
+    "expected_value": {
+      "department": "Technical Support",
+      "priority": "High",
+      "escalation_level": "Tier 2"
+    },
+    "validation_criteria": {
+      "method": "strict_json_match"
+    }
+  }
+}
+```

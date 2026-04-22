@@ -1,0 +1,11 @@
+openai
+pydantic
+numpy
+scikit-learn
+nltk
+sentence-transformers
+jsonschema
+pytest
+pytest-mock
+python-dotenv
+z3-solver

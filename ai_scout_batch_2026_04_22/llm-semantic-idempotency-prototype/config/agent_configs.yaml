@@ -1,0 +1,76 @@
+agents:
+  ExampleAgentA:
+    description: "An agent responsible for breaking down a high-level task into actionable sub-tasks."
+    llm_config:
+      model: "gpt-4o"
+      temperature: 0.1 # Lower temperature for more deterministic planning
+      max_tokens: 500
+      proxy_type: "structured_output_proxy" # Requires structured output
+      structured_output_schema: |
+        {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {"type": "integer"},
+              "task": {"type": "string"},
+              "depends_on": {"type": "array", "items": {"type": "integer"}}
+            },
+            "required": ["id", "task"]
+          }
+        }
+    system_message: "You are a highly organized task planner. Your goal is to break down complex requests into a list of concise, actionable, and independent sub-tasks. Output only JSON conforming to the specified schema."
+    capabilities:
+      - "task_decomposition"
+      - "json_output"
+    validation_gate_config:
+      rules:
+        - "json_schema_validation"
+        - "semantic_keyword_check"
+      rule_params:
+        json_schema_validation:
+          schema_key: "ExampleAgentA_output_schema" # Refers to a schema defined elsewhere or inline
+        semantic_keyword_check:
+          required_keywords: ["task", "id"]
+          min_keyword_density: 0.05 # e.g., at least 5% of tokens are from required keywords or their synonyms
+
+  ExampleAgentB:
+    description: "An agent responsible for generating creative content based on a given topic and constraints."
+    llm_config:
+      model: "claude-3-opus-20240229"
+      temperature: 0.7 # Higher temperature for creative content, but caching for consistency on repeated identical inputs
+      max_tokens: 1000
+      proxy_type: "caching_proxy" # Cache responses for identical inputs
+      seed: null # Not using a seeded proxy for this creative agent, but caching
+    system_message: "You are a creative content generator. Produce engaging and informative text based on the provided topic. Ensure the output is well-structured and grammatically correct."
+    capabilities:
+      - "content_generation"
+      - "text_summarization"
+    validation_gate_config:
+      rules:
+        - "semantic_similarity_to_reference"
+        - "length_constraint_check"
+      rule_params:
+        semantic_similarity_to_reference:
+          reference_path: "data/expected_outputs/agent_b_template.txt"
+          min_similarity_score: 0.75 # Compared to a reference output or a previous validated output
+          embedding_model: "text-embedding-3-small"
+        length_constraint_check:
+          min_words: 100
+          max_words: 1200
+
+  BaseAgent:
+    description: "Default configuration for any agent if specific settings are not overridden."
+    llm_config:
+      model: "gpt-3.5-turbo"
+      temperature: 0.5
+      max_tokens: 250
+      proxy_type: "seeded_proxy"
+      seed: 42 # Default seed for basic determinism
+    system_message: "You are a helpful assistant. Provide concise and accurate responses."
+    capabilities:
+      - "basic_response"
+    validation_gate_config:
+      rules:
+        - "non_empty_output"
+      rule_params: {}

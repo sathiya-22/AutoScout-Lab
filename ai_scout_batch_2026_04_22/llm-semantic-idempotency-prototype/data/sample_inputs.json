@@ -1,0 +1,154 @@
+```json
+{
+  "agent_inputs": {
+    "marketing_campaign_brief_v1": {
+      "campaign_name": "Autumn Sale 2024",
+      "target_audience": "Young adults (18-35)",
+      "product_category": "Electronics",
+      "key_message": "Unlock amazing deals on the latest gadgets!",
+      "channels": ["Email", "Social Media", "Website Banner"],
+      "required_elements": ["product_images", "call_to_action", "discount_codes"],
+      "expected_output_format": "Markdown"
+    },
+    "data_analysis_request_financials": {
+      "data_source_id": "financial_reports_Q3_2024",
+      "analysis_type": "quarterly_performance_summary",
+      "metrics_of_interest": ["revenue", "profit_margin", "customer_acquisition_cost"],
+      "granularity": "monthly",
+      "time_period": "2024-07-01 to 2024-09-30",
+      "expected_output_format": "JSON"
+    }
+  },
+  "llm_proxy_test_cases": {
+    "seeded_summary_request_1": {
+      "model": "gpt-3.5-turbo",
+      "prompt": "Explain the concept of 'semantic idempotency' in the context of LLMs in 100 words or less.",
+      "temperature": 0.7,
+      "max_tokens": 100,
+      "seed": 42
+    },
+    "seeded_summary_request_1_retry": {
+      "model": "gpt-3.5-turbo",
+      "prompt": "Explain the concept of 'semantic idempotency' in the context of LLMs in 100 words or less.",
+      "temperature": 0.7,
+      "max_tokens": 100,
+      "seed": 42
+    },
+    "caching_summary_request_2": {
+      "model": "gpt-4",
+      "prompt": "What is the capital of France?",
+      "temperature": 0.1,
+      "max_tokens": 20
+    },
+    "caching_summary_request_2_repeat": {
+      "model": "gpt-4",
+      "prompt": "What is the capital of France?",
+      "temperature": 0.1,
+      "max_tokens": 20
+    },
+    "structured_output_extraction": {
+      "model": "gpt-4-turbo",
+      "prompt": "Extract the book title and author from the following text: 'The Hitchhiker's Guide to the Galaxy by Douglas Adams is a classic sci-fi comedy.'",
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "title": {"type": "string", "description": "The title of the book"},
+          "author": {"type": "string", "description": "The author of the book"}
+        },
+        "required": ["title", "author"]
+      },
+      "temperature": 0.1
+    }
+  },
+  "semantic_reconciliation_test_cases": [
+    {
+      "test_id": "summary_comparison_simple",
+      "original_prompt": "Explain the benefits of cloud computing.",
+      "output_a": "Cloud computing offers scalability, cost savings by reducing infrastructure needs, and enhanced flexibility for businesses. It allows access to resources globally.",
+      "output_b": "Benefits of cloud computing include significant cost reductions due to eliminating hardware purchases, improved scalability for fluctuating demands, and greater operational flexibility. Global accessibility is also a key advantage.",
+      "expected_semantic_match": true,
+      "comparison_criteria": ["keyword_similarity", "embedding_distance"],
+      "thresholds": {
+        "keyword_similarity": 0.6,
+        "embedding_distance": 0.75
+      }
+    },
+    {
+      "test_id": "summary_comparison_different_meaning",
+      "original_prompt": "Describe the main function of a CPU.",
+      "output_a": "The CPU (Central Processing Unit) is the electronic circuitry that carries out the instructions of a computer program.",
+      "output_b": "A GPU (Graphics Processing Unit) is a specialized electronic circuit designed to rapidly manipulate and alter memory to accelerate the creation of images.",
+      "expected_semantic_match": false,
+      "comparison_criteria": ["keyword_similarity", "embedding_distance"],
+      "thresholds": {
+        "keyword_similarity": 0.3,
+        "embedding_distance": 0.4
+      }
+    },
+    {
+      "test_id": "structured_data_comparison_order_agnostic",
+      "original_prompt": "Extract name and age from 'Alice is 30 years old.'",
+      "output_a": "{\"name\": \"Alice\", \"age\": 30}",
+      "output_b": "{\"age\": 30, \"name\": \"Alice\"}",
+      "expected_semantic_match": true,
+      "comparison_criteria": ["structural_comparison_json"],
+      "thresholds": {}
+    },
+    {
+      "test_id": "structured_data_comparison_value_difference",
+      "original_prompt": "Extract name and city from 'Bob lives in New York.'",
+      "output_a": "{\"name\": \"Bob\", \"city\": \"New York\"}",
+      "output_b": "{\"name\": \"Robert\", \"city\": \"NYC\"}",
+      "expected_semantic_match": false,
+      "comparison_criteria": ["structural_comparison_json"],
+      "thresholds": {}
+    }
+  ],
+  "validation_gate_test_cases": [
+    {
+      "test_id": "agent_report_valid",
+      "agent_name": "example_agent_A",
+      "agent_input_context": "Generate a sales report for Q1 2024.",
+      "agent_output": {
+        "report_title": "Q1 2024 Sales Performance",
+        "total_revenue_usd": 1500000.00,
+        "new_customers": 500,
+        "top_performing_product": "Premium Widget",
+        "summary": "Sales exceeded targets by 10% this quarter due to strong product uptake."
+      },
+      "validation_rules_to_apply": ["has_title", "revenue_is_positive", "new_customers_is_numeric"],
+      "expected_pass": true,
+      "failure_messages": []
+    },
+    {
+      "test_id": "agent_report_invalid_revenue_type",
+      "agent_name": "example_agent_A",
+      "agent_input_context": "Generate a sales report for Q1 2024.",
+      "agent_output": {
+        "report_title": "Q1 2024 Sales Performance",
+        "total_revenue_usd": "one million five hundred thousand",
+        "new_customers": 500,
+        "top_performing_product": "Premium Widget",
+        "summary": "Sales exceeded targets by 10% this quarter due to strong product uptake."
+      },
+      "validation_rules_to_apply": ["has_title", "revenue_is_positive", "new_customers_is_numeric"],
+      "expected_pass": false,
+      "failure_messages": ["'total_revenue_usd' must be a numeric value."]
+    },
+    {
+      "test_id": "agent_report_invalid_missing_title",
+      "agent_name": "example_agent_A",
+      "agent_input_context": "Generate a sales report for Q1 2024.",
+      "agent_output": {
+        "total_revenue_usd": 1500000.00,
+        "new_customers": 500,
+        "top_performing_product": "Premium Widget",
+        "summary": "Sales exceeded targets by 10% this quarter due to strong product uptake."
+      },
+      "validation_rules_to_apply": ["has_title", "revenue_is_positive", "new_customers_is_numeric"],
+      "expected_pass": false,
+      "failure_messages": ["Report must have a 'report_title'."]
+    }
+  ]
+}
+```
