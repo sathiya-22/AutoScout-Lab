@@ -1,0 +1,36 @@
+numpy
+scipy
+librosa
+pydub
+moviepy
+ffmpeg-python
+audioread
+opencv-python
+
+# Deep Learning Frameworks
+torch
+torchaudio
+tensorflow
+
+# Source Separation
+demucs
+spleeter
+
+# Pitch Tracking
+crepe
+pyworld
+
+# Audio-Visual Alignment
+fastdtw
+
+# API / Web Service
+fastapi
+uvicorn[standard]
+
+# Configuration
+PyYAML
+
+# Development, Testing, and Linting (for a robust project)
+pytest
+black
+flake8
