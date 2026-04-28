@@ -1,0 +1,9 @@
+pydantic
+openai
+anthropic
+transformers
+sentence-transformers
+numpy
+scipy
+orjson
+python-dotenv
