@@ -1,0 +1,8 @@
+numpy
+scipy
+gymnasium
+stable-baselines3
+pandas
+matplotlib
+seaborn
+tqdm
