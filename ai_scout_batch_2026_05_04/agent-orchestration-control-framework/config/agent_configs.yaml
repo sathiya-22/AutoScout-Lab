@@ -1,0 +1,157 @@
+```yaml
+# config/agent_configs.yaml
+
+# Configuration for various agents within the Agent Orchestration Control Framework.
+# Each top-level key represents a unique agent identifier (ID), and its value is a dictionary
+# defining the agent's specific parameters. These parameters are loaded at runtime
+# to instantiate and configure agents.
+
+# Common Configuration Parameters:
+# - type: (Required) The class type of the agent to instantiate (e.g., "LLMAgent", "ToolAgent", "MetaAgent").
+# - model: (Optional) The specific language model identifier to use (e.g., "gpt-4-turbo", "claude-3-opus", "llama3").
+# - temperature: (Optional) LLM generation temperature (0.0 for deterministic, higher for creativity). Default: 0.5.
+# - max_tokens: (Optional) Maximum number of tokens for LLM responses. Default: 2048.
+# - description: (Required) A brief, human-readable description of the agent's role and purpose.
+# - capabilities: (Optional) A list of high-level functional capabilities or responsibilities of the agent.
+# - initial_state: (Optional) A dictionary of key-value pairs representing the agent's starting internal state.
+# - tools: (Optional) A list of string IDs corresponding to tools registered in the `tool_registry.py`
+#          that this agent is authorized and configured to use.
+# - policy_specs: (Optional, for MetaAgents) A list of paths or IDs to formal specification files (e.g., FSL files)
+#                 that this meta-agent uses for policy enforcement or interaction validation.
+# - monitored_agents: (Optional, for MetaAgents) A list of agent IDs that this meta-agent is specifically
+#                     tasked with monitoring.
+
+# Example Agent Configurations:
+
+# --- Core System Agents ---
+
+# The primary orchestrator agent (conceptual, not necessarily an 'LLMAgent')
+# This agent might not have an LLM but acts as a control entity.
+# This configuration is more for its identity within the system than LLM specifics.
+system_orchestrator:
+  type: "Orchestrator" # Refers to core/orchestrator.py, but configured as an 'agent' for control plane interaction
+  description: "The central engine responsible for scheduling and coordinating all agents."
+  capabilities:
+    - "agent_scheduling"
+    - "event_routing"
+    - "state_synchronization"
+  initial_state:
+    status: "active"
+    uptime_seconds: 0
+
+# --- Standard LLM-based Agents ---
+
+data_ingestion_agent:
+  type: "ToolAgent" # This agent uses tools to perform its primary function
+  model: "gpt-3.5-turbo"
+  temperature: 0.3
+  max_tokens: 1024
+  description: "Responsible for collecting and pre-processing raw data from external sources."
+  capabilities:
+    - "fetch_web_content"
+    - "parse_api_response"
+    - "validate_data_schema"
+  initial_state:
+    data_sources: []
+    ingestion_queue_size: 0
+  tools:
+    - "web_scraper_tool"
+    - "api_client_tool"
+    - "data_validator_tool"
+
+data_analysis_agent:
+  type: "LLMAgent"
+  model: "claude-3-sonnet"
+  temperature: 0.7
+  max_tokens: 2048
+  description: "Performs complex analysis on ingested data, identifying patterns, anomalies, and insights."
+  capabilities:
+    - "statistical_analysis"
+    - "pattern_recognition"
+    - "anomaly_detection"
+    - "summarize_findings"
+  initial_state:
+    analysis_status: "idle"
+    recent_findings: []
+
+report_generation_agent:
+  type: "ToolAgent"
+  model: "gpt-4-turbo"
+  temperature: 0.2
+  max_tokens: 1500
+  description: "Generates structured reports and visualizations based on analysis results."
+  capabilities:
+    - "document_templating"
+    - "chart_creation"
+    - "pdf_export"
+  initial_state:
+    reports_generated_today: 0
+    last_report_id: "N/A"
+  tools:
+    - "document_formatter_tool"
+    - "chart_builder_tool"
+    - "pdf_exporter_tool"
+
+# --- Meta-Agent (Supervisor) Examples ---
+
+system_monitor_meta_agent:
+  type: "MetaAgent"
+  model: "gpt-4o"
+  temperature: 0.1
+  max_tokens: 768
+  description: "Monitors overall system health, agent performance, and adherence to operational policies."
+  capabilities:
+    - "anomaly_detection"
+    - "performance_metrics_analysis"
+    - "alerting"
+    - "policy_enforcement"
+  initial_state:
+    system_status: "optimal"
+    alerts_issued: 0
+  monitored_agents:
+    - "data_ingestion_agent"
+    - "data_analysis_agent"
+    - "report_generation_agent"
+  policy_specs:
+    - "system_health_policy.fsl" # Example formal spec file for system health
+
+finance_compliance_meta_agent:
+  type: "MetaAgent"
+  model: "claude-3-opus"
+  temperature: 0.05 # Very low temperature for high determinism in compliance
+  max_tokens: 1024
+  description: "Enforces financial regulatory compliance and audits transactions based on formal specifications."
+  capabilities:
+    - "transaction_validation"
+    - "compliance_auditing"
+    - "risk_assessment"
+    - "suspension_recommendation"
+  initial_state:
+    compliance_score: 100
+    violations_detected: []
+  tools:
+    - "financial_ledger_access_tool" # A tool to read transaction data
+  monitored_agents:
+    # This meta-agent might monitor agents involved in financial transactions
+    - "transaction_processing_agent"
+    - "account_management_agent"
+  policy_specs:
+    - "finance_approval_process.fsl" # The formal spec for a finance workflow
+    - "anti_money_laundering.fsl"    # Another example compliance spec
+
+# --- Example Agent for Simple Workflows (e.g., `examples/simple_workflow.py`) ---
+
+simple_task_agent:
+  type: "LLMAgent"
+  model: "gpt-3.5-turbo"
+  temperature: 0.6
+  max_tokens: 512
+  description: "A general-purpose agent designed for simple conversational or task-oriented workflows."
+  capabilities:
+    - "understand_request"
+    - "provide_information"
+    - "confirm_action"
+  initial_state:
+    current_task: "idle"
+    dialogue_history: []
+```

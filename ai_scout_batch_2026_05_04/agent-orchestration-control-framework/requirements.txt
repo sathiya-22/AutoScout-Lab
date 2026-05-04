@@ -1,0 +1,7 @@
+pydantic
+pyyaml
+lark-parser
+pytest
+openai
+graphviz
+loguru
