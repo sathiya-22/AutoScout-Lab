@@ -1,0 +1,140 @@
+```toml
+[project]
+name = "graph-rag-scaling-prototype"
+version = "0.1.0"
+description = "Prototype for scaling Graph RAG beyond a few thousand documents, focusing on robust KG construction, maintenance, and updates from dynamic, noisy LLM-based extractions via active learning and self-correction."
+readme = "README.md"
+requires-python = ">=3.9,<3.12"
+license = { text = "MIT License" } # Assuming an MIT license for the prototype
+authors = [
+    { name = "Lead AI Developer", email = "ai.dev@example.com" },
+]
+keywords = ["Graph RAG", "Knowledge Graph", "Active Learning", "Human-in-the-loop", "LLM", "Data Extraction", "Information Retrieval", "Semantic Search"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Text Processing :: Linguistic",
+    "Topic :: Database",
+]
+
+dependencies = [
+    # Core Services & Data Ingestion
+    "pydantic>=2.0.0",            # For defining and enforcing data schemas (explicitly mentioned)
+    "langchain>=0.1.0",           # High-level orchestration for LLMs, RAG, and general AI applications
+    "openai>=1.0.0",              # Direct API client for OpenAI models (often used via LangChain)
+    "neo4j>=5.0.0",               # Client for Neo4j graph database (example graph store)
+    "pypdf>=3.0.0",               # Document parsing for PDF files
+    "beautifulsoup4>=4.0.0",      # Document parsing for HTML content
+    "lxml>=4.9.0",                # Fast XML/HTML parsing backend for BeautifulSoup4
+    "transformers>=4.0.0",        # For loading and utilizing pre-trained transformer models (e.g., embeddings)
+    "sentence-transformers>=2.0.0", # Specialized library for sentence embeddings
+    "torch>=2.0.0",               # PyTorch deep learning framework (runtime for many models)
+    # Graph Management, Active Learning & Reconciliation
+    "numpy>=1.20.0",              # Fundamental package for numerical computation
+    "scipy>=1.7.0",               # Scientific computing tools (e.g., for similarity, clustering)
+    "scikit-learn>=1.0.0",        # Machine learning toolkit (e.g., for entity resolution, active learning strategies)
+    # Web UI & Human-in-the-Loop
+    "fastapi>=0.100.0",           # Modern, fast web framework for building APIs
+    "uvicorn[standard]>=0.20.0",  # ASGI server for running FastAPI applications
+    # Utilities & Logging
+    "loguru>=0.7.0",              # Enhanced logging library for robust error handling and monitoring
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",            # Testing framework
+    "pytest-cov>=4.0.0",        # Code coverage reporting for pytest
+    "black>=23.0.0",            # Uncompromising Python code formatter
+    "isort>=5.0.0",             # A Python utility to sort imports alphabetically, and automatically separate into sections
+    "mypy>=1.0.0",              # Static type checker for Python
+    "ruff>=0.1.0",              # An extremely fast Python linter and formatter, written in Rust
+    "pre-commit>=3.0.0",        # A framework for managing and maintaining multi-language pre-commit hooks
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.metadata]
+allow-direct-references = true # Allows direct Git references for dependencies, useful in development or for private packages
+
+[tool.hatch.build.targets.wheel]
+packages = [
+    "src/core",
+    "src/extraction",
+    "src/kg_management",
+    "src/rag",
+    "src/utils",
+    "src/web_ui",
+    "config", # Include the config directory
+]
+
+[tool.pytest.ini_options]
+min_version = "7.0"
+addopts = "--cov=src --no-cov-on-fail --cov-report=term-missing --cov-report=xml"
+testpaths = ["tests"]
+pythonpath = ["src", "."] # Add 'src' to PYTHONPATH for easier module imports in tests and scripts
+
+[tool.black]
+line-length = 120
+target-version = ['py39', 'py310', 'py311']
+
+[tool.isort]
+profile = "black"
+line_length = 120
+known_first_party = ["src", "config"] # Helps isort group our own modules correctly
+
+[tool.mypy]
+python_version = "3.9"
+ignore_missing_imports = true
+pretty = true
+show_error_codes = true
+warn_unreachable = true
+allow_incomplete_defs = true # Useful for a prototype
+allow_untyped_defs = true    # Useful for a prototype
+
+[tool.ruff]
+line-length = 120
+target-version = "py39"
+select = [
+    "E",   # Error
+    "W",   # Warning
+    "F",   # Pyflakes
+    "C",   # Complexity
+    "I",   # isort
+    "N",   # Naming
+    "D",   # Docstrings (for general code quality, can ignore specifics)
+    "B",   # Bugbear
+    "UP",  # pyupgrade
+    "ANN", # flake8-annotations
+    "A",   # flake8-builtins
+    "S",   # flake8-bandit (security checks)
+    "TID", # flake8-tidy-imports
+    "PERF",# Perflint (performance checks)
+    "PIE", # flake8-pie
+    "RSE", # flake8-raise
+    "RET", # flake8-return
+    "SIM", # flake8-simplify
+    "PTH", # flake8-use-pathlib
+    "LOG", # flake8-logging-format
+]
+ignore = [
+    "E501", # Line too long (handled by Black/Ruff's formatter)
+    "D100", # Missing docstring in public module
+    "D104", # Missing docstring in public package
+    "ANN101", # Missing type annotation for self in method
+    "ANN102", # Missing type annotation for cls in classmethod
+]
+fix = true
+src = ["src", "config"] # Apply Ruff to these directories
+
+[tool.ruff.per-file-ignores]
+"tests/*" = ["D"] # Do not enforce docstrings in test files
+```

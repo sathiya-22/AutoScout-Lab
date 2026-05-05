@@ -1,0 +1,34 @@
+python-dotenv
+pydantic
+pydantic-settings
+
+# Document Parsing
+beautifulsoup4
+lxml
+pypdf
+
+# LLM Interaction & Embeddings
+langchain
+langchain-openai
+numpy
+openai
+rapidfuzz[speedup]
+scikit-learn
+scipy
+sentence-transformers
+tenacity
+torch # Backend for sentence-transformers and other ML operations
+transformers
+
+# Graph Database
+neo4j
+
+# Web UI / API
+fastapi
+streamlit
+uvicorn[standard]
+
+# Testing
+pytest
+pytest-asyncio
+pytest-cov
