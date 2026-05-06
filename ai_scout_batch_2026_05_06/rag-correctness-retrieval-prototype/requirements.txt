@@ -1,0 +1,17 @@
+anthropic
+bert-score
+chromadb
+langchain
+langchain-anthropic
+langchain-chroma
+langchain-openai
+numpy
+openai
+pandas
+pydantic
+pypdf
+python-dotenv
+rouge-score
+sentence-transformers
+tiktoken
+unstructured[pdf]
