@@ -1,24 +1,22 @@
 #!/usr/bin/env python3
 """AutoScout daily prototype generator.
 
-Runs inside GitHub Actions every day. Picks a fresh AI/ML topic, calls
-Gemini 2.5 Flash (1M input / 65k output tokens, free-tier available) to
-generate a complete prototype project, then writes it into the dated batch
-folder so the workflow can commit and push it.
+Free-tier budget: 5 RPM, 20 RPD, 250k tokens/day.
+Strategy: 1 request per run, ~5k output tokens — uses <2% of daily budget.
+Retries up to 3 times with 65-second back-off on rate-limit errors.
 """
 
 import os
 import re
 import sys
+import time
 from datetime import date
 from pathlib import Path
 
 from google import genai
 from google.genai import types
 
-# ── Topic pool ──────────────────────────────────────────────────────────────
-# Add more entries here as the repo grows. The picker avoids repeats by
-# checking which slugs already exist in the repo.
+# ── Topic pool ───────────────────────────────────────────────────────────────
 TOPICS = [
     "Adaptive RAG with Query Complexity Routing",
     "Self-Healing Agent Loop with Error Recovery",
@@ -57,6 +55,12 @@ TOPICS = [
     "Semantic Router for Multi-Agent Dispatch",
 ]
 
+# 1 request per day, ~5k output tokens ≈ <2% of the 250k daily token budget
+MODEL = "gemini-2.5-flash"
+MAX_OUTPUT_TOKENS = 5000
+MAX_RETRIES = 3
+RETRY_WAIT_SEC = 65  # just over 60s to clear the per-minute window
+
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -65,7 +69,6 @@ def slugify(text: str) -> str:
 
 
 def pick_topic(repo_root: Path) -> str:
-    """Return a topic not already present in the repo, cycling by day-of-year."""
     used_slugs: set[str] = set()
     for p in repo_root.glob("ai_scout_batch_*/*/"):
         used_slugs.add(p.name)
@@ -76,78 +79,79 @@ def pick_topic(repo_root: Path) -> str:
         if slugify(candidate) + "-prototype" not in used_slugs:
             return candidate
 
-    # All topics used — fall back to day index (will repeat eventually)
     return TOPICS[day_index % len(TOPICS)]
 
 
 def parse_sections(raw: str) -> dict[str, str]:
-    """Extract === FILENAME === sections from the model's response."""
     files: dict[str, str] = {}
     pattern = r"=== ([\w./\-]+) ===\n(.*?)(?==== [\w./\-]+ ===|\Z)"
     for match in re.finditer(pattern, raw, re.DOTALL):
-        name = match.group(1).strip()
-        content = match.group(2).strip()
-        files[name] = content
+        files[match.group(1).strip()] = match.group(2).strip()
     return files
 
 
 # ── Generation ───────────────────────────────────────────────────────────────
 
-SYSTEM_PROMPT = """\
-You are AutoScout, an automated AI prototype generator. You produce
-production-quality, self-contained Python prototype projects. Every project
-must be realistic, well-structured, and immediately runnable (given an API key).
-"""
+# Kept deliberately short to minimise input tokens (every token counts).
+SYSTEM_PROMPT = (
+    "You are AutoScout, an automated AI prototype generator. "
+    "Output production-quality, self-contained Python projects. "
+    "Be concise — prioritise clarity and correctness over verbosity."
+)
 
 USER_TEMPLATE = """\
-Generate a complete Python prototype project for the topic:
+Generate a Python prototype project for: {topic}
 
-  **{topic}**
-
-Respond with exactly 4 sections using these exact headers (no markdown fences
-inside the sections):
+Reply with exactly these 4 section headers (no markdown fences inside):
 
 === README.md ===
 === main.py ===
 === config.py ===
 === requirements.txt ===
 
-Guidelines:
-- README.md  : 250–400 words. Problem statement, approach, key components, usage.
-- main.py    : 150–300 lines. Functional demo of the prototype. Use the
-               google-genai SDK (model: gemini-2.5-flash) as the LLM provider.
-               Load the API key from the GEMINI_API_KEY env var.
-- config.py  : Pydantic BaseSettings class with fields: model_name, temperature,
-               max_tokens, api_key (from env). Include a ValidationConfig or
-               similar nested config relevant to the topic.
-- requirements.txt: Only packages actually imported in main.py / config.py,
-               one per line, no version pins.
-
-Do NOT wrap file contents in markdown code fences.
+Rules:
+- README.md  : 150-200 words. Problem, approach, usage.
+- main.py    : 80-120 lines. Working demo using google-genai SDK \
+(model: gemini-2.5-flash). Read GEMINI_API_KEY from env.
+- config.py  : Pydantic BaseSettings with model_name, temperature, \
+max_tokens, api_key fields.
+- requirements.txt: only packages actually used, one per line, no versions.
 """
-
-# gemini-2.5-flash: 1M input tokens, 65,536 output tokens — largest free-tier window
-MODEL = "gemini-2.5-flash"
 
 
 def generate_prototype_files(client: genai.Client, topic: str) -> dict[str, str]:
-    response = client.models.generate_content(
-        model=MODEL,
-        contents=USER_TEMPLATE.format(topic=topic),
-        config=types.GenerateContentConfig(
-            system_instruction=SYSTEM_PROMPT,
-            max_output_tokens=65536,
-            temperature=0.7,
-        ),
-    )
-    raw = response.text
-    files = parse_sections(raw)
-    if not files:
-        print("ERROR: Could not parse any sections from model response.", file=sys.stderr)
-        print("--- raw response ---", file=sys.stderr)
-        print(raw[:2000], file=sys.stderr)
-        sys.exit(1)
-    return files
+    for attempt in range(1, MAX_RETRIES + 1):
+        try:
+            response = client.models.generate_content(
+                model=MODEL,
+                contents=USER_TEMPLATE.format(topic=topic),
+                config=types.GenerateContentConfig(
+                    system_instruction=SYSTEM_PROMPT,
+                    max_output_tokens=MAX_OUTPUT_TOKENS,
+                    temperature=0.7,
+                ),
+            )
+            raw = response.text
+            files = parse_sections(raw)
+            if not files:
+                print("ERROR: no sections found in model response.", file=sys.stderr)
+                print(raw[:1000], file=sys.stderr)
+                sys.exit(1)
+            return files
+
+        except Exception as e:
+            err = str(e)
+            is_quota = "429" in err or "RESOURCE_EXHAUSTED" in err or "quota" in err.lower()
+            if is_quota and attempt < MAX_RETRIES:
+                print(f"Rate limit hit (attempt {attempt}/{MAX_RETRIES}). "
+                      f"Waiting {RETRY_WAIT_SEC}s before retry...", flush=True)
+                time.sleep(RETRY_WAIT_SEC)
+            else:
+                print(f"ERROR: {e}", file=sys.stderr)
+                sys.exit(1)
+
+    print("ERROR: all retries exhausted.", file=sys.stderr)
+    sys.exit(1)
 
 
 # ── Main ─────────────────────────────────────────────────────────────────────
@@ -155,7 +159,7 @@ def generate_prototype_files(client: genai.Client, topic: str) -> dict[str, str]
 def main() -> None:
     api_key = os.environ.get("GEMINI_API_KEY", "")
     if not api_key:
-        print("ERROR: GEMINI_API_KEY environment variable is not set.", file=sys.stderr)
+        print("ERROR: GEMINI_API_KEY is not set.", file=sys.stderr)
         sys.exit(1)
 
     client = genai.Client(api_key=api_key)
@@ -173,28 +177,25 @@ def main() -> None:
     proto_slug = slugify(topic) + "-prototype"
     proto_dir = batch_dir / proto_slug
 
-    print(f"Topic   : {topic}")
-    print(f"Output  : {batch_name}/{proto_slug}/")
-    print(f"Model   : {MODEL}  (1M input / 65k output tokens)")
+    print(f"Topic        : {topic}")
+    print(f"Output       : {batch_name}/{proto_slug}/")
+    print(f"Model        : {MODEL}")
+    print(f"Max output   : {MAX_OUTPUT_TOKENS} tokens  "
+          f"(budget used: ~{MAX_OUTPUT_TOKENS/250000*100:.1f}% of 250k daily limit)")
 
     files = generate_prototype_files(client, topic)
 
     proto_dir.mkdir(parents=True, exist_ok=True)
-
-    # Write generated files
     for filename, content in files.items():
         target = proto_dir / filename
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(content + "\n", encoding="utf-8")
         print(f"  wrote {filename}  ({len(content):,} chars)")
 
-    # Ensure a src package stub exists (matches existing repo convention)
-    src_init = proto_dir / "src" / "__init__.py"
-    src_init.parent.mkdir(exist_ok=True)
-    if not src_init.exists():
-        src_init.touch()
+    (proto_dir / "src").mkdir(exist_ok=True)
+    (proto_dir / "src" / "__init__.py").touch()
 
-    print(f"\nDone. Prototype written to {proto_dir.relative_to(repo_root)}")
+    print(f"\nDone — {proto_dir.relative_to(repo_root)}")
 
 
 if __name__ == "__main__":
