@@ -24,7 +24,7 @@ jobs:
           python-version: '3.11'
 
       - name: Install generator dependencies
-        run: pip install google-generativeai
+        run: pip install google-genai
 
       - name: Generate today's prototype
         env:

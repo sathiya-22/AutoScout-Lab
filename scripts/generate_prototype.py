@@ -2,7 +2,7 @@
 """AutoScout daily prototype generator.
 
 Runs inside GitHub Actions every day. Picks a fresh AI/ML topic, calls
-Gemini 2.5 Pro (largest available token window: 1M input / 65k output) to
+Gemini 2.5 Flash (1M input / 65k output tokens, free-tier available) to
 generate a complete prototype project, then writes it into the dated batch
 folder so the workflow can commit and push it.
 """
@@ -13,7 +13,8 @@ import sys
 from datetime import date
 from pathlib import Path
 
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 
 # ── Topic pool ──────────────────────────────────────────────────────────────
 # Add more entries here as the repo grows. The picker avoids repeats by
@@ -80,7 +81,7 @@ def pick_topic(repo_root: Path) -> str:
 
 
 def parse_sections(raw: str) -> dict[str, str]:
-    """Extract === FILENAME === sections from Gemini's response."""
+    """Extract === FILENAME === sections from the model's response."""
     files: dict[str, str] = {}
     pattern = r"=== ([\w./\-]+) ===\n(.*?)(?==== [\w./\-]+ ===|\Z)"
     for match in re.finditer(pattern, raw, re.DOTALL):
@@ -114,7 +115,7 @@ inside the sections):
 Guidelines:
 - README.md  : 250–400 words. Problem statement, approach, key components, usage.
 - main.py    : 150–300 lines. Functional demo of the prototype. Use the
-               google-generativeai SDK (model: gemini-2.5-pro) as the LLM provider.
+               google-genai SDK (model: gemini-2.5-flash) as the LLM provider.
                Load the API key from the GEMINI_API_KEY env var.
 - config.py  : Pydantic BaseSettings class with fields: model_name, temperature,
                max_tokens, api_key (from env). Include a ValidationConfig or
@@ -125,23 +126,24 @@ Guidelines:
 Do NOT wrap file contents in markdown code fences.
 """
 
-# Gemini 2.5 Pro: 1M input tokens, 65,536 output tokens — largest available window
-MODEL = "gemini-2.5-pro"
+# gemini-2.5-flash: 1M input tokens, 65,536 output tokens — largest free-tier window
+MODEL = "gemini-2.5-flash"
 
 
-def generate_prototype_files(topic: str) -> dict[str, str]:
-    model = genai.GenerativeModel(
-        model_name=MODEL,
-        system_instruction=SYSTEM_PROMPT,
-    )
-    response = model.generate_content(
-        USER_TEMPLATE.format(topic=topic),
-        generation_config=genai.GenerationConfig(max_output_tokens=65536),
+def generate_prototype_files(client: genai.Client, topic: str) -> dict[str, str]:
+    response = client.models.generate_content(
+        model=MODEL,
+        contents=USER_TEMPLATE.format(topic=topic),
+        config=types.GenerateContentConfig(
+            system_instruction=SYSTEM_PROMPT,
+            max_output_tokens=65536,
+            temperature=0.7,
+        ),
     )
     raw = response.text
     files = parse_sections(raw)
     if not files:
-        print("ERROR: Could not parse any sections from Gemini response.", file=sys.stderr)
+        print("ERROR: Could not parse any sections from model response.", file=sys.stderr)
         print("--- raw response ---", file=sys.stderr)
         print(raw[:2000], file=sys.stderr)
         sys.exit(1)
@@ -156,7 +158,7 @@ def main() -> None:
         print("ERROR: GEMINI_API_KEY environment variable is not set.", file=sys.stderr)
         sys.exit(1)
 
-    genai.configure(api_key=api_key)
+    client = genai.Client(api_key=api_key)
 
     repo_root = Path(__file__).parent.parent.resolve()
     today = date.today()
@@ -175,7 +177,7 @@ def main() -> None:
     print(f"Output  : {batch_name}/{proto_slug}/")
     print(f"Model   : {MODEL}  (1M input / 65k output tokens)")
 
-    files = generate_prototype_files(topic)
+    files = generate_prototype_files(client, topic)
 
     proto_dir.mkdir(parents=True, exist_ok=True)
 
