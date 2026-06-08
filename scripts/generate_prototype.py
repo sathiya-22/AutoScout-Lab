@@ -2,8 +2,9 @@
 """AutoScout daily prototype generator.
 
 Runs inside GitHub Actions every day. Picks a fresh AI/ML topic, calls
-Claude to generate a complete prototype project, then writes it into the
-dated batch folder so the workflow can commit and push it.
+Gemini 2.5 Pro (largest available token window: 1M input / 65k output) to
+generate a complete prototype project, then writes it into the dated batch
+folder so the workflow can commit and push it.
 """
 
 import os
@@ -12,7 +13,7 @@ import sys
 from datetime import date
 from pathlib import Path
 
-import anthropic
+import google.generativeai as genai
 
 # ── Topic pool ──────────────────────────────────────────────────────────────
 # Add more entries here as the repo grows. The picker avoids repeats by
@@ -79,7 +80,7 @@ def pick_topic(repo_root: Path) -> str:
 
 
 def parse_sections(raw: str) -> dict[str, str]:
-    """Extract === FILENAME === sections from Claude's response."""
+    """Extract === FILENAME === sections from Gemini's response."""
     files: dict[str, str] = {}
     pattern = r"=== ([\w./\-]+) ===\n(.*?)(?==== [\w./\-]+ ===|\Z)"
     for match in re.finditer(pattern, raw, re.DOTALL):
@@ -113,8 +114,8 @@ inside the sections):
 Guidelines:
 - README.md  : 250–400 words. Problem statement, approach, key components, usage.
 - main.py    : 150–300 lines. Functional demo of the prototype. Use the
-               anthropic SDK (model: claude-sonnet-4-6) as the LLM provider.
-               Load the API key from the ANTHROPIC_API_KEY env var.
+               google-generativeai SDK (model: gemini-2.5-pro) as the LLM provider.
+               Load the API key from the GEMINI_API_KEY env var.
 - config.py  : Pydantic BaseSettings class with fields: model_name, temperature,
                max_tokens, api_key (from env). Include a ValidationConfig or
                similar nested config relevant to the topic.
@@ -124,18 +125,23 @@ Guidelines:
 Do NOT wrap file contents in markdown code fences.
 """
 
+# Gemini 2.5 Pro: 1M input tokens, 65,536 output tokens — largest available window
+MODEL = "gemini-2.5-pro"
 
-def generate_prototype_files(client: anthropic.Anthropic, topic: str) -> dict[str, str]:
-    response = client.messages.create(
-        model="claude-sonnet-4-6",
-        max_tokens=4096,
-        system=SYSTEM_PROMPT,
-        messages=[{"role": "user", "content": USER_TEMPLATE.format(topic=topic)}],
+
+def generate_prototype_files(topic: str) -> dict[str, str]:
+    model = genai.GenerativeModel(
+        model_name=MODEL,
+        system_instruction=SYSTEM_PROMPT,
     )
-    raw = response.content[0].text
+    response = model.generate_content(
+        USER_TEMPLATE.format(topic=topic),
+        generation_config=genai.GenerationConfig(max_output_tokens=65536),
+    )
+    raw = response.text
     files = parse_sections(raw)
     if not files:
-        print("ERROR: Could not parse any sections from Claude response.", file=sys.stderr)
+        print("ERROR: Could not parse any sections from Gemini response.", file=sys.stderr)
         print("--- raw response ---", file=sys.stderr)
         print(raw[:2000], file=sys.stderr)
         sys.exit(1)
@@ -145,10 +151,12 @@ def generate_prototype_files(client: anthropic.Anthropic, topic: str) -> dict[st
 # ── Main ─────────────────────────────────────────────────────────────────────
 
 def main() -> None:
-    api_key = os.environ.get("ANTHROPIC_API_KEY", "")
+    api_key = os.environ.get("GEMINI_API_KEY", "")
     if not api_key:
-        print("ERROR: ANTHROPIC_API_KEY environment variable is not set.", file=sys.stderr)
+        print("ERROR: GEMINI_API_KEY environment variable is not set.", file=sys.stderr)
         sys.exit(1)
+
+    genai.configure(api_key=api_key)
 
     repo_root = Path(__file__).parent.parent.resolve()
     today = date.today()
@@ -165,9 +173,9 @@ def main() -> None:
 
     print(f"Topic   : {topic}")
     print(f"Output  : {batch_name}/{proto_slug}/")
+    print(f"Model   : {MODEL}  (1M input / 65k output tokens)")
 
-    client = anthropic.Anthropic(api_key=api_key)
-    files = generate_prototype_files(client, topic)
+    files = generate_prototype_files(topic)
 
     proto_dir.mkdir(parents=True, exist_ok=True)
 

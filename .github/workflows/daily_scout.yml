@@ -24,11 +24,11 @@ jobs:
           python-version: '3.11'
 
       - name: Install generator dependencies
-        run: pip install anthropic
+        run: pip install google-generativeai
 
       - name: Generate today's prototype
         env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: python scripts/generate_prototype.py
 
       - name: Commit and push new batch
