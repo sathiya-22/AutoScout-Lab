@@ -58,7 +58,7 @@ TOPICS = [
 # 1 request per day, ~5k output tokens ≈ <2% of the 250k daily token budget
 # Fallback is tried if primary exhausts all retries due to server-side demand.
 PRIMARY_MODEL  = "gemini-2.5-flash"
-FALLBACK_MODEL = "gemini-1.5-flash"
+FALLBACK_MODEL = "gemini-2.0-flash"   # stable v1beta model, not subject to 2.5 demand spikes
 MAX_OUTPUT_TOKENS = 5000
 MAX_RETRIES = 5
 RETRY_BASE_SEC = 30  # exponential back-off: 30, 60, 120, 240, 480s
@@ -135,8 +135,12 @@ def _call_model(client: genai.Client, model: str, topic: str) -> str:
 
 
 def _is_transient(err: str) -> bool:
+    """True for errors worth retrying (rate limits, server overload).
+    404 / auth errors are NOT transient — skip to next model immediately."""
+    if any(x in err for x in ("404", "403", "401", "NOT_FOUND", "PERMISSION_DENIED")):
+        return False
     keywords = ("429", "503", "RESOURCE_EXHAUSTED", "UNAVAILABLE",
-                 "quota", "overloaded", "high demand", "retry")
+                "quota", "overloaded", "high demand", "retry")
     return any(k.lower() in err.lower() for k in keywords)
 
 
@@ -162,9 +166,9 @@ def generate_prototype_files(client: genai.Client, topic: str) -> dict[str, str]
                           f"retrying in {wait}s...", flush=True)
                     time.sleep(wait)
                 else:
-                    print(f"  Gave up on {model} after {attempt} attempt(s): {err[:200]}",
+                    print(f"  Moving on from {model} after {attempt} attempt(s): {err[:200]}",
                           file=sys.stderr)
-                    break  # try fallback model
+                    break  # try next model
 
     print("ERROR: all models and retries exhausted.", file=sys.stderr)
     sys.exit(1)
