@@ -56,10 +56,12 @@ TOPICS = [
 ]
 
 # 1 request per day, ~5k output tokens ≈ <2% of the 250k daily token budget
-MODEL = "gemini-2.5-flash"
+# Fallback is tried if primary exhausts all retries due to server-side demand.
+PRIMARY_MODEL  = "gemini-2.5-flash"
+FALLBACK_MODEL = "gemini-1.5-flash"
 MAX_OUTPUT_TOKENS = 5000
-MAX_RETRIES = 3
-RETRY_WAIT_SEC = 65  # just over 60s to clear the per-minute window
+MAX_RETRIES = 5
+RETRY_BASE_SEC = 30  # exponential back-off: 30, 60, 120, 240, 480s
 
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
@@ -119,38 +121,52 @@ max_tokens, api_key fields.
 """
 
 
+def _call_model(client: genai.Client, model: str, topic: str) -> str:
+    response = client.models.generate_content(
+        model=model,
+        contents=USER_TEMPLATE.format(topic=topic),
+        config=types.GenerateContentConfig(
+            system_instruction=SYSTEM_PROMPT,
+            max_output_tokens=MAX_OUTPUT_TOKENS,
+            temperature=0.7,
+        ),
+    )
+    return response.text
+
+
+def _is_transient(err: str) -> bool:
+    keywords = ("429", "503", "RESOURCE_EXHAUSTED", "UNAVAILABLE",
+                 "quota", "overloaded", "high demand", "retry")
+    return any(k.lower() in err.lower() for k in keywords)
+
+
 def generate_prototype_files(client: genai.Client, topic: str) -> dict[str, str]:
-    for attempt in range(1, MAX_RETRIES + 1):
-        try:
-            response = client.models.generate_content(
-                model=MODEL,
-                contents=USER_TEMPLATE.format(topic=topic),
-                config=types.GenerateContentConfig(
-                    system_instruction=SYSTEM_PROMPT,
-                    max_output_tokens=MAX_OUTPUT_TOKENS,
-                    temperature=0.7,
-                ),
-            )
-            raw = response.text
-            files = parse_sections(raw)
-            if not files:
-                print("ERROR: no sections found in model response.", file=sys.stderr)
-                print(raw[:1000], file=sys.stderr)
-                sys.exit(1)
-            return files
+    for model in (PRIMARY_MODEL, FALLBACK_MODEL):
+        print(f"Trying model: {model}", flush=True)
+        for attempt in range(1, MAX_RETRIES + 1):
+            try:
+                raw = _call_model(client, model, topic)
+                files = parse_sections(raw)
+                if not files:
+                    print("ERROR: no sections found in model response.", file=sys.stderr)
+                    print(raw[:1000], file=sys.stderr)
+                    sys.exit(1)
+                print(f"  Success with {model} on attempt {attempt}.")
+                return files
 
-        except Exception as e:
-            err = str(e)
-            is_quota = "429" in err or "RESOURCE_EXHAUSTED" in err or "quota" in err.lower()
-            if is_quota and attempt < MAX_RETRIES:
-                print(f"Rate limit hit (attempt {attempt}/{MAX_RETRIES}). "
-                      f"Waiting {RETRY_WAIT_SEC}s before retry...", flush=True)
-                time.sleep(RETRY_WAIT_SEC)
-            else:
-                print(f"ERROR: {e}", file=sys.stderr)
-                sys.exit(1)
+            except Exception as e:
+                err = str(e)
+                if _is_transient(err) and attempt < MAX_RETRIES:
+                    wait = RETRY_BASE_SEC * (2 ** (attempt - 1))  # 30,60,120,240s
+                    print(f"  Transient error (attempt {attempt}/{MAX_RETRIES}), "
+                          f"retrying in {wait}s...", flush=True)
+                    time.sleep(wait)
+                else:
+                    print(f"  Gave up on {model} after {attempt} attempt(s): {err[:200]}",
+                          file=sys.stderr)
+                    break  # try fallback model
 
-    print("ERROR: all retries exhausted.", file=sys.stderr)
+    print("ERROR: all models and retries exhausted.", file=sys.stderr)
     sys.exit(1)
 
 
@@ -179,9 +195,9 @@ def main() -> None:
 
     print(f"Topic        : {topic}")
     print(f"Output       : {batch_name}/{proto_slug}/")
-    print(f"Model        : {MODEL}")
+    print(f"Primary      : {PRIMARY_MODEL}  →  fallback: {FALLBACK_MODEL}")
     print(f"Max output   : {MAX_OUTPUT_TOKENS} tokens  "
-          f"(budget used: ~{MAX_OUTPUT_TOKENS/250000*100:.1f}% of 250k daily limit)")
+          f"(~{MAX_OUTPUT_TOKENS/250000*100:.1f}% of 250k daily limit)")
 
     files = generate_prototype_files(client, topic)
 
