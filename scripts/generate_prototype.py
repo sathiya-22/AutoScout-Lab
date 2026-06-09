@@ -3,7 +3,8 @@
 
 Free-tier budget: 5 RPM, 20 RPD, 250k tokens/day.
 Strategy: 1 request per run, ~5k output tokens — uses <2% of daily budget.
-Retries up to 3 times with 65-second back-off on rate-limit errors.
+Primary model: gemini-2.0-flash (stable). Falls back to gemini-2.5-flash.
+Max 2 retries per model to preserve daily request quota.
 """
 
 import os
@@ -55,13 +56,13 @@ TOPICS = [
     "Semantic Router for Multi-Agent Dispatch",
 ]
 
-# 1 request per day, ~5k output tokens ≈ <2% of the 250k daily token budget
-# Fallback is tried if primary exhausts all retries due to server-side demand.
-PRIMARY_MODEL  = "gemini-2.5-flash"
-FALLBACK_MODEL = "gemini-2.0-flash"   # stable v1beta model, not subject to 2.5 demand spikes
+# gemini-2.0-flash is the stable primary — 2.5-flash has chronic 503s on free tier.
+# 2 retries max per model: keeps total requests to ≤6 worst-case (well under 20 RPD).
+PRIMARY_MODEL  = "gemini-2.0-flash"
+FALLBACK_MODEL = "gemini-2.5-flash"
 MAX_OUTPUT_TOKENS = 5000
-MAX_RETRIES = 5
-RETRY_BASE_SEC = 30  # exponential back-off: 30, 60, 120, 240, 480s
+MAX_RETRIES = 2
+RETRY_BASE_SEC = 30  # back-off: 30s, 60s
 
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
@@ -197,11 +198,12 @@ def main() -> None:
     proto_slug = slugify(topic) + "-prototype"
     proto_dir = batch_dir / proto_slug
 
-    print(f"Topic        : {topic}")
-    print(f"Output       : {batch_name}/{proto_slug}/")
-    print(f"Primary      : {PRIMARY_MODEL}  →  fallback: {FALLBACK_MODEL}")
-    print(f"Max output   : {MAX_OUTPUT_TOKENS} tokens  "
-          f"(~{MAX_OUTPUT_TOKENS/250000*100:.1f}% of 250k daily limit)")
+    print(f"─── AutoScout: generating 1 project ───")
+    print(f"Topic      : {topic}")
+    print(f"Output     : {batch_name}/{proto_slug}/")
+    print(f"Models     : {PRIMARY_MODEL}  →  fallback: {FALLBACK_MODEL}")
+    print(f"Tokens     : up to {MAX_OUTPUT_TOKENS} output  "
+          f"(~{MAX_OUTPUT_TOKENS/250000*100:.1f}% of 250k daily budget)")
 
     files = generate_prototype_files(client, topic)
 
