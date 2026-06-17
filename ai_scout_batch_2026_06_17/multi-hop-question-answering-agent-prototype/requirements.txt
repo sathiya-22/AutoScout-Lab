@@ -1,0 +1,4 @@
+google-generative-ai
+pydantic
+pydantic-settings
+```
