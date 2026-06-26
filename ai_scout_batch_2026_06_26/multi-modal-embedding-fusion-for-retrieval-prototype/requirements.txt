@@ -1,0 +1,6 @@
+google-generativeai
+numpy
+Pillow
+pydantic
+pydantic-settings
+python-dotenv
