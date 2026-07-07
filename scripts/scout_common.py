@@ -44,6 +44,24 @@ def save_problems(problems: list[dict]) -> None:
     )
 
 
+def parse_json_lenient(raw: str):
+    """Parse model JSON output: strip code fences; salvage truncated arrays
+    by trimming to the last complete object."""
+    raw = re.sub(r"^```(?:json)?\s*|\s*```$", "", raw.strip())
+    try:
+        return json.loads(raw)
+    except json.JSONDecodeError:
+        if not raw.startswith("["):
+            raise
+        end = raw.rfind("}")
+        while end != -1:
+            try:
+                return json.loads(raw[:end + 1] + "]")
+            except json.JSONDecodeError:
+                end = raw.rfind("}", 0, end)
+        raise
+
+
 def is_transient(err: str) -> bool:
     """True for errors worth retrying (rate limits, server overload).
     404 / auth errors are NOT transient — skip to next model immediately."""
@@ -61,13 +79,17 @@ def call_gemini(api_key: str, prompt: str, system: str, max_tokens: int,
     from google.genai import types
 
     client = genai.Client(api_key=api_key)
-    config = types.GenerateContentConfig(
-        system_instruction=system,
-        max_output_tokens=max_tokens,
-        temperature=0.4 if json_mode else 0.7,
-        response_mime_type="application/json" if json_mode else None,
-    )
     for model in (PRIMARY_MODEL, FALLBACK_MODEL):
+        config = types.GenerateContentConfig(
+            system_instruction=system,
+            max_output_tokens=max_tokens,
+            temperature=0.4 if json_mode else 0.7,
+            response_mime_type="application/json" if json_mode else None,
+            # 2.5 models spend output tokens on thinking by default, which
+            # truncates the visible response — disable it.
+            thinking_config=(types.ThinkingConfig(thinking_budget=0)
+                             if model.startswith("gemini-2.5") else None),
+        )
         print(f"Trying model: {model}", flush=True)
         for attempt in range(1, MAX_RETRIES + 1):
             try:

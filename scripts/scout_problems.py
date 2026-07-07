@@ -18,7 +18,8 @@ import urllib.parse
 import urllib.request
 from datetime import date, datetime, timedelta, timezone
 
-from scout_common import call_gemini, load_problems, save_problems, slugify
+from scout_common import (call_gemini, load_problems, parse_json_lenient,
+                          save_problems, slugify)
 
 LOOKBACK_DAYS = 2       # overlap between runs; dedup handles repeats
 MAX_SIGNALS = 60        # cap prompt size
@@ -134,10 +135,10 @@ def distill(api_key: str, signals: list[dict]) -> list[dict]:
         api_key,
         USER_TEMPLATE.format(n=MAX_NEW_PROBLEMS, signals=lines),
         SYSTEM_PROMPT,
-        max_tokens=2000,
+        max_tokens=4000,
         json_mode=True,
     )
-    parsed = json.loads(raw)
+    parsed = parse_json_lenient(raw)
     return parsed if isinstance(parsed, list) else []
 
 

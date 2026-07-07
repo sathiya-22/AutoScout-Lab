@@ -15,7 +15,8 @@ import sys
 import urllib.request
 from datetime import date, timedelta
 
-from scout_common import REPO_ROOT, call_gemini, load_problems, save_problems
+from scout_common import (REPO_ROOT, call_gemini, load_problems,
+                          parse_json_lenient, save_problems)
 
 MAX_CANDIDATES = 40
 
@@ -90,7 +91,7 @@ def main() -> None:
         max_tokens=4000,
         json_mode=True,
     )
-    result = json.loads(raw)
+    result = parse_json_lenient(raw)
 
     chosen = next((p for p in candidates if p["id"] == result.get("chosen_id")),
                   candidates[0])  # fall back to highest signal

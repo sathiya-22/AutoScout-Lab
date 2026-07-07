@@ -35,7 +35,9 @@ jobs:
         run: |
           git config user.name  "AutoScout Bot"
           git config user.email "autoscout-bot@users.noreply.github.com"
-          git add major/ problems/
-          git diff --staged --quiet && echo "Nothing to commit." || \
+          if [ -d major ]; then git add major/; fi
+          if [ -d problems ]; then git add problems/; fi
+          git diff --staged --quiet && echo "Nothing to commit." || {
             git commit -m "feat(major): weekly major-problem pick $(date -u +%Y-%m-%d)"
-          git push
+            git push
+          }

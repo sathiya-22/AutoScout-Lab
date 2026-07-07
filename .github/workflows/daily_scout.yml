@@ -39,9 +39,11 @@ jobs:
 
       - name: Commit problem-log updates
         run: |
+          if [ ! -d problems ]; then echo "No problem log yet."; exit 0; fi
           git config user.name  "AutoScout Bot"
           git config user.email "autoscout-bot@users.noreply.github.com"
           git add problems/
-          git diff --staged --quiet && echo "No log changes." || \
+          git diff --staged --quiet && echo "No log changes." || {
             git commit -m "chore(scout): update problem log $(date -u +%Y-%m-%d)"
-          git push
+            git push
+          }
