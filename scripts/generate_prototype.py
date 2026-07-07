@@ -1,16 +1,25 @@
 #!/usr/bin/env python3
 """AutoScout daily prototype generator.
 
+Each run generates one AI prototype and pushes it to a brand-new, standalone
+public GitHub repo named "<topic-slug>-<date>" (via SCOUT_PAT) rather than
+committing it into this repo — this repo only orchestrates generation.
+
 Free-tier budget: 5 RPM, 20 RPD, 250k tokens/day.
 Strategy: 1 request per run, ~5k output tokens — uses <2% of daily budget.
 Primary model: gemini-2.0-flash (stable). Falls back to gemini-2.5-flash.
 Max 2 retries per model to preserve daily request quota.
 """
 
+import json
 import os
 import re
+import subprocess
 import sys
+import tempfile
 import time
+import urllib.error
+import urllib.request
 from datetime import date
 from pathlib import Path
 
@@ -64,6 +73,8 @@ MAX_OUTPUT_TOKENS = 5000
 MAX_RETRIES = 2
 RETRY_BASE_SEC = 30  # back-off: 30s, 60s
 
+GITHUB_API = "https://api.github.com"
+
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -71,17 +82,8 @@ def slugify(text: str) -> str:
     return re.sub(r"[^a-z0-9]+", "-", text.lower()).strip("-")
 
 
-def pick_topic(repo_root: Path) -> str:
-    used_slugs: set[str] = set()
-    for p in repo_root.glob("ai_scout_batch_*/*/"):
-        used_slugs.add(p.name)
-
+def pick_topic() -> str:
     day_index = date.today().timetuple().tm_yday
-    for i in range(len(TOPICS)):
-        candidate = TOPICS[(day_index + i) % len(TOPICS)]
-        if slugify(candidate) + "-prototype" not in used_slugs:
-            return candidate
-
     return TOPICS[day_index % len(TOPICS)]
 
 
@@ -175,49 +177,105 @@ def generate_prototype_files(client: genai.Client, topic: str) -> dict[str, str]
     sys.exit(1)
 
 
+# ── GitHub repo creation ─────────────────────────────────────────────────────
+
+def _gh_api(method: str, path: str, token: str, body: dict | None = None) -> dict:
+    data = json.dumps(body).encode() if body is not None else None
+    req = urllib.request.Request(f"{GITHUB_API}{path}", data=data, method=method)
+    req.add_header("Authorization", f"token {token}")
+    req.add_header("Accept", "application/vnd.github+json")
+    try:
+        with urllib.request.urlopen(req) as resp:
+            raw = resp.read()
+            return json.loads(raw) if raw else {}
+    except urllib.error.HTTPError as e:
+        if e.code == 404:
+            return {}
+        raise RuntimeError(f"GitHub API {method} {path} failed: {e.code} {e.read().decode()[:300]}") from e
+
+
+def get_authenticated_user(token: str) -> str:
+    return _gh_api("GET", "/user", token)["login"]
+
+
+def repo_exists(owner: str, name: str, token: str) -> bool:
+    return bool(_gh_api("GET", f"/repos/{owner}/{name}", token))
+
+
+def create_repo(name: str, token: str) -> dict:
+    return _gh_api("POST", "/user/repos", token, {
+        "name": name,
+        "private": False,
+        "description": "Auto-generated AI prototype by AutoScout",
+        "auto_init": False,
+    })
+
+
+def push_prototype(clone_url: str, files: dict[str, str], token: str) -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+        proto_dir = Path(tmp)
+        for filename, content in files.items():
+            target = proto_dir / filename
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_text(content + "\n", encoding="utf-8")
+            print(f"  wrote {filename}  ({len(content):,} chars)")
+
+        (proto_dir / "src").mkdir(exist_ok=True)
+        (proto_dir / "src" / "__init__.py").touch()
+
+        authed_url = clone_url.replace("https://", f"https://x-access-token:{token}@")
+
+        def run(*args: str) -> None:
+            subprocess.run(args, cwd=proto_dir, check=True)
+
+        run("git", "init", "-q")
+        run("git", "config", "user.name", "AutoScout Bot")
+        run("git", "config", "user.email", "autoscout-bot@users.noreply.github.com")
+        run("git", "add", ".")
+        run("git", "commit", "-q", "-m", "feat: initial AutoScout prototype")
+        run("git", "branch", "-M", "main")
+        run("git", "remote", "add", "origin", authed_url)
+        run("git", "push", "-q", "-u", "origin", "main")
+
+
 # ── Main ─────────────────────────────────────────────────────────────────────
 
 def main() -> None:
-    api_key = os.environ.get("GEMINI_API_KEY", "")
-    if not api_key:
+    gemini_key = os.environ.get("GEMINI_API_KEY", "")
+    if not gemini_key:
         print("ERROR: GEMINI_API_KEY is not set.", file=sys.stderr)
         sys.exit(1)
 
-    client = genai.Client(api_key=api_key)
+    gh_token = os.environ.get("SCOUT_PAT", "")
+    if not gh_token:
+        print("ERROR: SCOUT_PAT is not set.", file=sys.stderr)
+        sys.exit(1)
 
-    repo_root = Path(__file__).parent.parent.resolve()
+    client = genai.Client(api_key=gemini_key)
+
     today = date.today()
-    batch_name = f"ai_scout_batch_{today.strftime('%Y_%m_%d')}"
-    batch_dir = repo_root / batch_name
+    topic = pick_topic()
+    repo_name = f"{slugify(topic)}-{today.isoformat()}"
 
-    if batch_dir.exists():
-        print(f"Batch {batch_name} already exists — nothing to do.")
+    owner = get_authenticated_user(gh_token)
+
+    if repo_exists(owner, repo_name, gh_token):
+        print(f"Repo {owner}/{repo_name} already exists — nothing to do.")
         sys.exit(0)
-
-    topic = pick_topic(repo_root)
-    proto_slug = slugify(topic) + "-prototype"
-    proto_dir = batch_dir / proto_slug
 
     print(f"─── AutoScout: generating 1 project ───")
     print(f"Topic      : {topic}")
-    print(f"Output     : {batch_name}/{proto_slug}/")
+    print(f"New repo   : {owner}/{repo_name}")
     print(f"Models     : {PRIMARY_MODEL}  →  fallback: {FALLBACK_MODEL}")
     print(f"Tokens     : up to {MAX_OUTPUT_TOKENS} output  "
           f"(~{MAX_OUTPUT_TOKENS/250000*100:.1f}% of 250k daily budget)")
 
     files = generate_prototype_files(client, topic)
 
-    proto_dir.mkdir(parents=True, exist_ok=True)
-    for filename, content in files.items():
-        target = proto_dir / filename
-        target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_text(content + "\n", encoding="utf-8")
-        print(f"  wrote {filename}  ({len(content):,} chars)")
+    repo = create_repo(repo_name, gh_token)
+    push_prototype(repo["clone_url"], files, gh_token)
 
-    (proto_dir / "src").mkdir(exist_ok=True)
-    (proto_dir / "src" / "__init__.py").touch()
-
-    print(f"\nDone — {proto_dir.relative_to(repo_root)}")
+    print(f"\nDone — https://github.com/{owner}/{repo_name}")
 
 
 if __name__ == "__main__":

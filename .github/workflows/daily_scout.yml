@@ -6,7 +6,7 @@ on:
   workflow_dispatch:        # Allow manual trigger from GitHub UI
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   generate-prototype:
@@ -15,8 +15,6 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set up Python 3.11
         uses: actions/setup-python@v5
@@ -26,17 +24,8 @@ jobs:
       - name: Install generator dependencies
         run: pip install google-genai
 
-      - name: Generate today's prototype
+      - name: Generate today's prototype in a new repo
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          SCOUT_PAT: ${{ secrets.SCOUT_PAT }}
         run: python scripts/generate_prototype.py
-
-      - name: Commit and push new batch
-        run: |
-          git config user.name  "AutoScout Bot"
-          git config user.email "autoscout-bot@users.noreply.github.com"
-          git add .
-          # Only commit if something actually changed
-          git diff --staged --quiet && echo "Nothing new to commit." || \
-            git commit -m "feat(autoscout): add $(date -u +%Y-%m-%d) AI prototype batch"
-          git push
