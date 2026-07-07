@@ -6,7 +6,7 @@ on:
   workflow_dispatch:        # Allow manual trigger from GitHub UI
 
 permissions:
-  contents: read
+  contents: write   # commit problem-log updates back to this repo
 
 jobs:
   generate-prototype:
@@ -24,8 +24,24 @@ jobs:
       - name: Install generator dependencies
         run: pip install google-genai
 
+      - name: Scout real AI problems
+        continue-on-error: true   # scouting failure must not block generation
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          SCOUT_PAT: ${{ secrets.SCOUT_PAT }}
+        run: python scripts/scout_problems.py
+
       - name: Generate today's prototype in a new repo
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           SCOUT_PAT: ${{ secrets.SCOUT_PAT }}
         run: python scripts/generate_prototype.py
+
+      - name: Commit problem-log updates
+        run: |
+          git config user.name  "AutoScout Bot"
+          git config user.email "autoscout-bot@users.noreply.github.com"
+          git add problems/
+          git diff --staged --quiet && echo "No log changes." || \
+            git commit -m "chore(scout): update problem log $(date -u +%Y-%m-%d)"
+          git push

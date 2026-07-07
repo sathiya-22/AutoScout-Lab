@@ -1,0 +1,41 @@
+name: Weekly Major Problem Synthesis
+
+on:
+  schedule:
+    - cron: '30 4 * * 0'  # Sundays at 10:00 IST (04:30 UTC), after the daily run
+  workflow_dispatch:        # Allow manual trigger from GitHub UI
+
+permissions:
+  contents: write   # commit the weekly report + log updates
+  issues: write     # open the "build this" issue
+
+jobs:
+  synthesize:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install google-genai
+
+      - name: Pick the week's major problem
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python scripts/weekly_synthesis.py
+
+      - name: Commit report and log updates
+        run: |
+          git config user.name  "AutoScout Bot"
+          git config user.email "autoscout-bot@users.noreply.github.com"
+          git add major/ problems/
+          git diff --staged --quiet && echo "Nothing to commit." || \
+            git commit -m "feat(major): weekly major-problem pick $(date -u +%Y-%m-%d)"
+          git push

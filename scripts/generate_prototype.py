@@ -5,6 +5,10 @@ Each run generates one AI prototype and pushes it to a brand-new, standalone
 public GitHub repo named "<topic-slug>-<date>" (via SCOUT_PAT) rather than
 committing it into this repo — this repo only orchestrates generation.
 
+Topic selection: the highest-signal unaddressed problem from
+problems/problem_log.jsonl (populated by scout_problems.py); the static
+TOPICS pool is only a fallback for when the log has nothing new.
+
 Free-tier budget: 5 RPM, 20 RPD, 250k tokens/day.
 Strategy: 1 request per run, ~5k output tokens — uses <2% of daily budget.
 Primary model: gemini-2.0-flash (stable). Falls back to gemini-2.5-flash.
@@ -26,7 +30,9 @@ from pathlib import Path
 from google import genai
 from google.genai import types
 
-# ── Topic pool ───────────────────────────────────────────────────────────────
+from scout_common import load_problems, save_problems
+
+# ── Fallback topic pool (used only when the problem log has nothing new) ─────
 TOPICS = [
     "Adaptive RAG with Query Complexity Routing",
     "Self-Healing Agent Loop with Error Recovery",
@@ -87,6 +93,24 @@ def pick_topic() -> str:
     return TOPICS[day_index % len(TOPICS)]
 
 
+def pick_problem() -> dict | None:
+    """Highest-signal problem from the scouted log not yet prototyped."""
+    fresh = [p for p in load_problems() if p.get("status") == "new"]
+    if not fresh:
+        return None
+    fresh.sort(key=lambda p: (-p.get("signal", 0), p["date"]))
+    return fresh[0]
+
+
+def mark_prototyped(problem_id: str, repo_url: str) -> None:
+    problems = load_problems()
+    for p in problems:
+        if p["id"] == problem_id:
+            p["status"] = "prototyped"
+            p["prototype_repo"] = repo_url
+    save_problems(problems)
+
+
 def parse_sections(raw: str) -> dict[str, str]:
     files: dict[str, str] = {}
     pattern = r"=== ([\w./\-]+) ===\n(.*?)(?==== [\w./\-]+ ===|\Z)"
@@ -104,9 +128,7 @@ SYSTEM_PROMPT = (
     "Be concise — prioritise clarity and correctness over verbosity."
 )
 
-USER_TEMPLATE = """\
-Generate a Python prototype project for: {topic}
-
+FORMAT_RULES = """\
 Reply with exactly these 4 section headers (no markdown fences inside):
 
 === README.md ===
@@ -115,7 +137,7 @@ Reply with exactly these 4 section headers (no markdown fences inside):
 === requirements.txt ===
 
 Rules:
-- README.md  : 150-200 words. Problem, approach, usage.
+- README.md  : 150-200 words. State the real problem, approach, usage.
 - main.py    : 80-120 lines. Working demo using google-genai SDK \
 (model: gemini-2.5-flash). Read GEMINI_API_KEY from env.
 - config.py  : Pydantic BaseSettings with model_name, temperature, \
@@ -123,11 +145,22 @@ max_tokens, api_key fields.
 - requirements.txt: only packages actually used, one per line, no versions.
 """
 
+USER_TEMPLATE = (
+    "Generate a Python prototype project for: {topic}\n\n" + FORMAT_RULES
+)
 
-def _call_model(client: genai.Client, model: str, topic: str) -> str:
+PROBLEM_TEMPLATE = (
+    "Generate a Python prototype that addresses this real problem observed "
+    "in the AI community:\n\n"
+    "Problem: {title}\n"
+    "Details: {problem}\n\n" + FORMAT_RULES
+)
+
+
+def _call_model(client: genai.Client, model: str, prompt: str) -> str:
     response = client.models.generate_content(
         model=model,
-        contents=USER_TEMPLATE.format(topic=topic),
+        contents=prompt,
         config=types.GenerateContentConfig(
             system_instruction=SYSTEM_PROMPT,
             max_output_tokens=MAX_OUTPUT_TOKENS,
@@ -147,12 +180,12 @@ def _is_transient(err: str) -> bool:
     return any(k.lower() in err.lower() for k in keywords)
 
 
-def generate_prototype_files(client: genai.Client, topic: str) -> dict[str, str]:
+def generate_prototype_files(client: genai.Client, prompt: str) -> dict[str, str]:
     for model in (PRIMARY_MODEL, FALLBACK_MODEL):
         print(f"Trying model: {model}", flush=True)
         for attempt in range(1, MAX_RETRIES + 1):
             try:
-                raw = _call_model(client, model, topic)
+                raw = _call_model(client, model, prompt)
                 files = parse_sections(raw)
                 if not files:
                     print("ERROR: no sections found in model response.", file=sys.stderr)
@@ -254,28 +287,43 @@ def main() -> None:
     client = genai.Client(api_key=gemini_key)
 
     today = date.today()
-    topic = pick_topic()
-    repo_name = f"{slugify(topic)}-{today.isoformat()}"
+    problem = pick_problem()
+    if problem:
+        topic = problem["title"]
+        prompt = PROBLEM_TEMPLATE.format(title=problem["title"],
+                                         problem=problem["problem"])
+    else:
+        topic = pick_topic()
+        prompt = USER_TEMPLATE.format(topic=topic)
 
+    repo_name = f"{slugify(topic)}-{today.isoformat()}"
     owner = get_authenticated_user(gh_token)
+    repo_url = f"https://github.com/{owner}/{repo_name}"
 
     if repo_exists(owner, repo_name, gh_token):
         print(f"Repo {owner}/{repo_name} already exists — nothing to do.")
+        if problem:
+            mark_prototyped(problem["id"], repo_url)
         sys.exit(0)
 
     print(f"─── AutoScout: generating 1 project ───")
+    print(f"Source     : {'scouted problem' if problem else 'fallback topic pool'}")
     print(f"Topic      : {topic}")
     print(f"New repo   : {owner}/{repo_name}")
     print(f"Models     : {PRIMARY_MODEL}  →  fallback: {FALLBACK_MODEL}")
     print(f"Tokens     : up to {MAX_OUTPUT_TOKENS} output  "
           f"(~{MAX_OUTPUT_TOKENS/250000*100:.1f}% of 250k daily budget)")
 
-    files = generate_prototype_files(client, topic)
+    files = generate_prototype_files(client, prompt)
 
     repo = create_repo(repo_name, gh_token)
     push_prototype(repo["clone_url"], files, gh_token)
 
-    print(f"\nDone — https://github.com/{owner}/{repo_name}")
+    if problem:
+        mark_prototyped(problem["id"], repo_url)
+        print(f"Marked problem '{problem['id']}' as prototyped.")
+
+    print(f"\nDone — {repo_url}")
 
 
 if __name__ == "__main__":
