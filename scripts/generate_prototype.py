@@ -1,16 +1,24 @@
 #!/usr/bin/env python3
 """AutoScout daily prototype generator.
 
-Each run generates one AI prototype and pushes it to a brand-new, standalone
-public GitHub repo named "<topic-slug>-<date>" (via SCOUT_PAT) rather than
-committing it into this repo — this repo only orchestrates generation.
+Each run generates one prototype in the agentic-AI space — agent
+orchestration, memory, evaluation/observability, guardrails/security,
+multi-agent coordination, tool-calling/MCP protocols, agent ops/deployment —
+and pushes it to a brand-new, standalone public GitHub repo named
+"<topic-slug>-<date>" (via SCOUT_PAT) rather than committing it into this
+repo — this repo only orchestrates generation.
+
+The model picks whatever project format/stack best fits the problem (Python
+package, Node/TS CLI, Go service, MCP server, browser extension, spec +
+reference impl, ...) instead of a fixed Python-only shape, and only wires in
+GEMINI_API_KEY when the idea's core feature genuinely needs an LLM call.
 
 Topic selection: the highest-signal unaddressed problem from
 problems/problem_log.jsonl (populated by scout_problems.py); the static
 TOPICS pool is only a fallback for when the log has nothing new.
 
 Free-tier budget: 5 RPM, 20 RPD, 250k tokens/day.
-Strategy: 1 request per run, ~5k output tokens — uses <2% of daily budget.
+Strategy: 1 request per run, ~7k output tokens — uses <3% of daily budget.
 Primary model: gemini-2.0-flash (stable). Falls back to gemini-2.5-flash.
 Max 2 retries per model to preserve daily request quota.
 """
@@ -33,49 +41,50 @@ from google.genai import types
 from scout_common import load_problems, save_problems
 
 # ── Fallback topic pool (used only when the problem log has nothing new) ─────
+# Themed around agent orchestration, memory, evals/observability,
+# guardrails/security, multi-agent coordination, tool-calling/MCP, and ops.
 TOPICS = [
-    "Adaptive RAG with Query Complexity Routing",
+    "Agent Orchestration Graph with Conditional Branching",
     "Self-Healing Agent Loop with Error Recovery",
-    "Multi-Modal Embedding Fusion for Retrieval",
-    "Constitutional AI Filter Pipeline",
-    "LLM-Driven Data Augmentation Framework",
-    "Streaming Token Budget Manager",
-    "Hierarchical Memory Agent",
-    "Semantic Deduplication at Ingestion",
-    "LLM Uncertainty Quantification",
+    "Hierarchical Agent Memory with Decay and Recall",
+    "Agent Trace Logger and Replay Debugger",
+    "Multi-Agent Task Handoff Protocol",
+    "MCP Server Boilerplate with Auto-Discovered Tools",
+    "Agent Guardrail Middleware for Unsafe Tool Calls",
     "Tool Use Chain-of-Thought Verifier",
-    "Cross-Lingual RAG Adapter",
-    "Agent Observability and Trace Logger",
-    "Prompt Compression via Selective Context",
+    "Agent Cost and Token Budget Governor",
     "Structured Output Validator with Auto-Retry",
-    "Sparse-Dense Hybrid Search Ranker",
-    "Retrieval Augmented Code Generation",
-    "Persona-Conditioned Response Generator",
-    "Dynamic Few-Shot Example Selector",
-    "Knowledge Graph Augmented LLM",
-    "Incremental Document Indexing Pipeline",
-    "LLM Cost Optimizer with Tier Routing",
-    "Adversarial Prompt Detection Filter",
-    "Agentic Web Scraper with Extraction LLM",
-    "Temporal Reasoning Module for QA",
-    "Feedback-Driven Prompt Evolution System",
-    "Contrastive Retrieval Reranker",
-    "Hallucination Detection via Consistency Checks",
-    "Long-Context Summarization with Rolling Window",
-    "Multi-Hop Question Answering Agent",
-    "Embedding Cache with Approximate Nearest Neighbour",
-    "Retrieval Confidence Calibration Module",
-    "Agentic Code Review Assistant",
+    "Agent-to-Agent Message Bus with Delivery Guarantees",
+    "Sandboxed Tool Execution Environment for Agents",
+    "Agent Evaluation Harness with Regression Scoring",
+    "Human-in-the-Loop Approval Gate for Agent Actions",
+    "Agent State Checkpointing and Rollback",
+    "Multi-Agent Debate and Consensus Protocol",
+    "Rate-Limited Tool Dispatcher for Agent Fleets",
+    "Agent Permission Scoping and Capability Tokens",
+    "Long-Running Agent Task Queue with Resumability",
+    "Agent Observability Dashboard for Tool-Call Traces",
+    "Dynamic Tool Discovery and Registration for Agents",
+    "Agent Prompt Injection Detection Filter",
+    "Multi-Agent Role Assignment and Load Balancer",
+    "Agent Memory Consolidation via Summarization",
+    "Local-First Agent Runtime for Resource-Constrained Hosts",
+    "Agent Config Version Control and Diffing",
+    "Streaming Tool-Call Parser with Partial Execution",
+    "Agent Failure Triage and Auto-Retry Policy Engine",
+    "Cross-Framework Agent Adapter (LangGraph/CrewAI/AutoGen)",
+    "Agent Sandbox Escape Detection",
     "Task Decomposition and Planning Agent",
-    "LLM-Powered Data Cleaning Pipeline",
+    "Agent Fleet Health Monitor with Alerting",
     "Semantic Router for Multi-Agent Dispatch",
+    "Agent Skill Packaging and Sharing Format",
 ]
 
 # gemini-2.0-flash is the stable primary — 2.5-flash has chronic 503s on free tier.
 # 2 retries max per model: keeps total requests to ≤6 worst-case (well under 20 RPD).
 PRIMARY_MODEL  = "gemini-2.0-flash"
 FALLBACK_MODEL = "gemini-2.5-flash"
-MAX_OUTPUT_TOKENS = 5000
+MAX_OUTPUT_TOKENS = 7000  # varied project shapes need more room than a fixed 4-file layout
 MAX_RETRIES = 2
 RETRY_BASE_SEC = 30  # back-off: 30s, 60s
 
@@ -123,35 +132,50 @@ def parse_sections(raw: str) -> dict[str, str]:
 
 # Kept deliberately short to minimise input tokens (every token counts).
 SYSTEM_PROMPT = (
-    "You are AutoScout, an automated AI prototype generator. "
-    "Output production-quality, self-contained Python projects. "
-    "Be concise — prioritise clarity and correctness over verbosity."
+    "You are AutoScout, an automated prototype generator specializing in "
+    "agentic AI systems: agent orchestration, memory, evaluation/"
+    "observability, guardrails/security, multi-agent coordination, tool-"
+    "calling/MCP protocols, and agent ops/deployment. Output a working, self-"
+    "contained project in whatever language and project shape genuinely fits "
+    "the problem best — do not default to a Python script out of habit. "
+    "Be concise — prioritise clarity, correctness, and real usability as a "
+    "starting point for a project someone would actually build on."
 )
 
 FORMAT_RULES = """\
-Reply with exactly these 4 section headers (no markdown fences inside):
+Decide the project shape yourself — Python package, Node/TypeScript CLI, Go \
+service, MCP server, browser or VS Code extension, spec plus reference \
+implementation, or anything else that is the best fit. Do not force Python \
+or any fixed file layout if another shape suits the problem better.
 
-=== README.md ===
-=== main.py ===
-=== config.py ===
-=== requirements.txt ===
+Decide independently whether the prototype's core feature genuinely requires \
+calling an LLM:
+- If yes: call the Gemini API (google-genai SDK for Python, or the plain \
+REST endpoint for other languages/stacks) and read the key from the \
+GEMINI_API_KEY environment variable. Do not hardcode a key.
+- If no (e.g. the idea is orchestration, memory storage, tracing, config, a \
+protocol/format — pure tooling with no inherent LLM call): do not wire in \
+any LLM API at all. It should run standalone with zero API keys.
 
-Rules:
-- README.md  : 150-200 words. State the real problem, approach, usage.
-- main.py    : 80-120 lines. Working demo using google-genai SDK \
-(model: gemini-2.5-flash). Read GEMINI_API_KEY from env.
-- config.py  : Pydantic BaseSettings with model_name, temperature, \
-max_tokens, api_key fields.
-- requirements.txt: only packages actually used, one per line, no versions.
+Reply with one "=== path ===" header per file (no markdown fences inside), \
+choosing filenames/paths that fit the chosen stack (e.g. requirements.txt \
+for Python, package.json for Node/TS, go.mod for Go, Dockerfile for a \
+service). Always include a README.md as the FIRST section covering:
+- The real problem and who it affects
+- Why this project shape/stack was chosen for it
+- Setup and usage instructions
+- A line stating plainly whether GEMINI_API_KEY is required to run it
+
+Keep it tight: 3-7 files total, working code, no filler.
 """
 
 USER_TEMPLATE = (
-    "Generate a Python prototype project for: {topic}\n\n" + FORMAT_RULES
+    "Generate an agentic-AI prototype project for: {topic}\n\n" + FORMAT_RULES
 )
 
 PROBLEM_TEMPLATE = (
-    "Generate a Python prototype that addresses this real problem observed "
-    "in the AI community:\n\n"
+    "Generate a prototype that addresses this real problem observed in the "
+    "agentic-AI community:\n\n"
     "Problem: {title}\n"
     "Details: {problem}\n\n" + FORMAT_RULES
 )
@@ -252,9 +276,6 @@ def push_prototype(clone_url: str, files: dict[str, str], token: str) -> None:
             target.parent.mkdir(parents=True, exist_ok=True)
             target.write_text(content + "\n", encoding="utf-8")
             print(f"  wrote {filename}  ({len(content):,} chars)")
-
-        (proto_dir / "src").mkdir(exist_ok=True)
-        (proto_dir / "src" / "__init__.py").touch()
 
         authed_url = clone_url.replace("https://", f"https://x-access-token:{token}@")
 
