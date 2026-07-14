@@ -29,16 +29,12 @@ import re
 import subprocess
 import sys
 import tempfile
-import time
 import urllib.error
 import urllib.request
 from datetime import date
 from pathlib import Path
 
-from google import genai
-from google.genai import types
-
-from scout_common import load_problems, save_problems
+from scout_common import call_gemini, load_problems, save_problems
 
 # ── Fallback topic pool (used only when the problem log has nothing new) ─────
 # Themed around agent orchestration, memory, evals/observability,
@@ -80,13 +76,7 @@ TOPICS = [
     "Agent Skill Packaging and Sharing Format",
 ]
 
-# gemini-2.0-flash is the stable primary — 2.5-flash has chronic 503s on free tier.
-# 2 retries max per model: keeps total requests to ≤6 worst-case (well under 20 RPD).
-PRIMARY_MODEL  = "gemini-2.0-flash"
-FALLBACK_MODEL = "gemini-2.5-flash"
 MAX_OUTPUT_TOKENS = 7000  # varied project shapes need more room than a fixed 4-file layout
-MAX_RETRIES = 2
-RETRY_BASE_SEC = 30  # back-off: 30s, 60s
 
 GITHUB_API = "https://api.github.com"
 
@@ -195,57 +185,18 @@ PROBLEM_TEMPLATE = (
 )
 
 
-def _call_model(client: genai.Client, model: str, prompt: str) -> str:
-    response = client.models.generate_content(
-        model=model,
-        contents=prompt,
-        config=types.GenerateContentConfig(
-            system_instruction=SYSTEM_PROMPT,
-            max_output_tokens=MAX_OUTPUT_TOKENS,
-            temperature=0.7,
-        ),
-    )
-    return response.text
-
-
-def _is_transient(err: str) -> bool:
-    """True for errors worth retrying (rate limits, server overload).
-    404 / auth errors are NOT transient — skip to next model immediately."""
-    if any(x in err for x in ("404", "403", "401", "NOT_FOUND", "PERMISSION_DENIED")):
-        return False
-    keywords = ("429", "503", "RESOURCE_EXHAUSTED", "UNAVAILABLE",
-                "quota", "overloaded", "high demand", "retry")
-    return any(k.lower() in err.lower() for k in keywords)
-
-
-def generate_prototype_files(client: genai.Client, prompt: str) -> dict[str, str]:
-    for model in (PRIMARY_MODEL, FALLBACK_MODEL):
-        print(f"Trying model: {model}", flush=True)
-        for attempt in range(1, MAX_RETRIES + 1):
-            try:
-                raw = _call_model(client, model, prompt)
-                files = parse_sections(raw)
-                if not files:
-                    print("ERROR: no sections found in model response.", file=sys.stderr)
-                    print(raw[:1000], file=sys.stderr)
-                    sys.exit(1)
-                print(f"  Success with {model} on attempt {attempt}.")
-                return files
-
-            except Exception as e:
-                err = str(e)
-                if _is_transient(err) and attempt < MAX_RETRIES:
-                    wait = RETRY_BASE_SEC * (2 ** (attempt - 1))  # 30,60,120,240s
-                    print(f"  Transient error (attempt {attempt}/{MAX_RETRIES}), "
-                          f"retrying in {wait}s...", flush=True)
-                    time.sleep(wait)
-                else:
-                    print(f"  Moving on from {model} after {attempt} attempt(s): {err[:200]}",
-                          file=sys.stderr)
-                    break  # try next model
-
-    print("ERROR: all models and retries exhausted.", file=sys.stderr)
-    sys.exit(1)
+def generate_prototype_files(api_key: str, prompt: str) -> dict[str, str]:
+    try:
+        raw = call_gemini(api_key, prompt, SYSTEM_PROMPT, max_tokens=MAX_OUTPUT_TOKENS)
+    except RuntimeError as e:
+        print(f"ERROR: {e}", file=sys.stderr)
+        sys.exit(1)
+    files = parse_sections(raw)
+    if not files:
+        print("ERROR: no sections found in model response.", file=sys.stderr)
+        print(raw[:1000], file=sys.stderr)
+        sys.exit(1)
+    return files
 
 
 # ── GitHub repo creation ─────────────────────────────────────────────────────
@@ -319,8 +270,6 @@ def main() -> None:
         print("ERROR: SCOUT_PAT is not set.", file=sys.stderr)
         sys.exit(1)
 
-    client = genai.Client(api_key=gemini_key)
-
     today = date.today()
     problem = pick_problem()
     if problem:
@@ -345,11 +294,10 @@ def main() -> None:
     print(f"Source     : {'scouted problem' if problem else 'fallback topic pool'}")
     print(f"Topic      : {topic}")
     print(f"New repo   : {owner}/{repo_name}")
-    print(f"Models     : {PRIMARY_MODEL}  →  fallback: {FALLBACK_MODEL}")
     print(f"Tokens     : up to {MAX_OUTPUT_TOKENS} output  "
           f"(~{MAX_OUTPUT_TOKENS/250000*100:.1f}% of 250k daily budget)")
 
-    files = generate_prototype_files(client, prompt)
+    files = generate_prototype_files(gemini_key, prompt)
 
     repo = create_repo(repo_name, gh_token)
     push_prototype(repo["clone_url"], files, gh_token)
