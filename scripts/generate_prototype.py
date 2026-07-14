@@ -34,7 +34,8 @@ import urllib.request
 from datetime import date
 from pathlib import Path
 
-from scout_common import call_gemini, load_problems, save_problems
+from repo_registry import add_repo
+from scout_common import call_gemini, load_problems, parse_sections, save_problems
 
 # ── Fallback topic pool (used only when the problem log has nothing new) ─────
 # Themed around agent orchestration, memory, evals/observability,
@@ -108,14 +109,6 @@ def mark_prototyped(problem_id: str, repo_url: str) -> None:
             p["status"] = "prototyped"
             p["prototype_repo"] = repo_url
     save_problems(problems)
-
-
-def parse_sections(raw: str) -> dict[str, str]:
-    files: dict[str, str] = {}
-    pattern = r"=== ([\w./\-]+) ===\n(.*?)(?==== [\w./\-]+ ===|\Z)"
-    for match in re.finditer(pattern, raw, re.DOTALL):
-        files[match.group(1).strip()] = match.group(2).strip()
-    return files
 
 
 # ── Generation ───────────────────────────────────────────────────────────────
@@ -301,6 +294,7 @@ def main() -> None:
 
     repo = create_repo(repo_name, gh_token)
     push_prototype(repo["clone_url"], files, gh_token)
+    add_repo(f"{owner}/{repo_name}", repo_name, today.isoformat(), topic)
 
     if problem:
         mark_prototyped(problem["id"], repo_url)
