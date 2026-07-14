@@ -44,6 +44,15 @@ def save_problems(problems: list[dict]) -> None:
     )
 
 
+def parse_sections(raw: str) -> dict[str, str]:
+    """Parse '=== path ===\\ncontent' sections into {path: content}."""
+    files: dict[str, str] = {}
+    pattern = r"=== ([\w./\-]+) ===\n(.*?)(?==== [\w./\-]+ ===|\Z)"
+    for match in re.finditer(pattern, raw, re.DOTALL):
+        files[match.group(1).strip()] = match.group(2).strip()
+    return files
+
+
 def parse_json_lenient(raw: str):
     """Parse model JSON output: strip code fences; salvage truncated arrays
     by trimming to the last complete object."""

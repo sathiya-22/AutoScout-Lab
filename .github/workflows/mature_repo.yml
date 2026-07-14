@@ -1,0 +1,41 @@
+name: Repo Maturation Loop
+
+on:
+  schedule:
+    - cron: '0 4 * * *'  # Every day at 09:30 IST (04:00 UTC), after the daily generator
+  workflow_dispatch:        # Allow manual trigger from GitHub UI
+
+permissions:
+  contents: write   # commit the registry update back to this repo
+
+jobs:
+  mature:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install google-genai
+
+      - name: Advance one due repo by one increment
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          SCOUT_PAT: ${{ secrets.SCOUT_PAT }}
+        run: python scripts/mature_repo.py
+
+      - name: Commit registry updates
+        run: |
+          git config user.name  "AutoScout Bot"
+          git config user.email "autoscout-bot@users.noreply.github.com"
+          if [ -d repos ]; then git add repos/; fi
+          git diff --staged --quiet && echo "No registry changes." || {
+            git commit -m "chore(autoscout): registry update $(date -u +%Y-%m-%d)"
+            git push
+          }
