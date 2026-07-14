@@ -157,10 +157,24 @@ GEMINI_API_KEY environment variable. Do not hardcode a key.
 protocol/format — pure tooling with no inherent LLM call): do not wire in \
 any LLM API at all. It should run standalone with zero API keys.
 
-Reply with one "=== path ===" header per file (no markdown fences inside), \
-choosing filenames/paths that fit the chosen stack (e.g. requirements.txt \
-for Python, package.json for Node/TS, go.mod for Go, Dockerfile for a \
-service). Always include a README.md as the FIRST section covering:
+Output format — one header line per file, in EXACTLY this form, with the \
+real filename/path substituted in (never the literal word "path"):
+
+=== <filename-or-relative-path> ===
+<the file's full content>
+
+For example, a Node/TS CLI would start:
+
+=== package.json ===
+{{ ... }}
+
+=== src/index.ts ===
+...
+
+Choose filenames/paths that fit the chosen stack (e.g. requirements.txt for \
+Python, package.json for Node/TS, go.mod for Go, Dockerfile for a service). \
+No markdown fences inside any file's content. Always include a README.md as \
+the FIRST section covering:
 - The real problem and who it affects
 - Why this project shape/stack was chosen for it
 - Setup and usage instructions
