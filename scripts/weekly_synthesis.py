@@ -21,13 +21,15 @@ from scout_common import (REPO_ROOT, call_gemini, load_problems,
 MAX_CANDIDATES = 40
 
 SYSTEM_PROMPT = (
-    "You are AutoScout's chief analyst. You select the most impactful real "
-    "problem of the week and draft a practical build spec for a small "
-    "open-source project."
+    "You are AutoScout's chief analyst for agentic AI systems — agent "
+    "orchestration, memory, evaluation/observability, guardrails/security, "
+    "multi-agent coordination, tool-calling/MCP protocols, and agent ops. "
+    "You select the most impactful real problem of the week and draft a "
+    "practical build spec for a small open-source project."
 )
 
 USER_TEMPLATE = """\
-Below are AI-domain problems scouted from the community this week (JSON).
+Below are agentic-AI problems scouted from the community this week (JSON).
 
 Pick the ONE most significant problem worth building a serious open-source \
 solution for. Judge by: how many people it affects, severity, absence of good \

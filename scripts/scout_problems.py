@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
 """AutoScout daily problem scout.
 
-Gathers real AI-domain pain signals from Hacker News, GitHub issues and
-Stack Overflow, distills them into structured problem statements with one
-Gemini call, and appends new ones to problems/problem_log.jsonl.
+Gathers real pain signals in the agentic-AI space — agent orchestration,
+memory, evaluation/observability, guardrails/security, multi-agent
+coordination, tool-calling/MCP protocols, agent ops/deployment — from Hacker
+News, GitHub issues (both keyword search and targeted agent-framework repos)
+and Stack Overflow. Distills them into structured problem statements with one
+Gemini call and appends new ones to problems/problem_log.jsonl.
 
-Budget: 1 Gemini request per run (~2k output tokens).
+Budget: 1 Gemini request per run (~4k output tokens).
 Run with --dry-run to fetch and print signals without calling Gemini or
 writing the log.
 """
@@ -26,6 +29,26 @@ MAX_SIGNALS = 60        # cap prompt size
 MAX_NEW_PROBLEMS = 5
 USER_AGENT = "AutoScout-Lab problem scout (github.com/sathiya-22/AutoScout-Lab)"
 
+# Agentic-AI-ops specific search terms — orchestration, memory, evals,
+# observability, guardrails, multi-agent, tool-calling/MCP, deployment.
+AGENT_KEYWORDS = (
+    "agent orchestration", "agent memory", "MCP server", "multi-agent",
+    "agent observability", "agent guardrails", "tool calling",
+    "agent evaluation",
+)
+
+# High-signal open-source repos at the center of the agent ecosystem —
+# searched directly for their most-reacted-to open issues.
+AGENT_FRAMEWORK_REPOS = (
+    "langchain-ai/langchain",
+    "langchain-ai/langgraph",
+    "crewAIInc/crewAI",
+    "microsoft/autogen",
+    "openai/openai-agents-python",
+    "modelcontextprotocol/servers",
+    "modelcontextprotocol/python-sdk",
+)
+
 
 # ── Signal sources (each failure-tolerant: one dead API must not kill the run) ─
 
@@ -42,7 +65,7 @@ def _get_json(url: str, headers: dict | None = None):
 
 def fetch_hackernews(since_ts: int) -> list[dict]:
     signals = []
-    for query in ("LLM", "AI agent", "RAG retrieval"):
+    for query in AGENT_KEYWORDS:
         params = urllib.parse.urlencode({
             "query": query,
             "tags": "story",
@@ -61,31 +84,52 @@ def fetch_hackernews(since_ts: int) -> list[dict]:
     return signals
 
 
-def fetch_github_issues(since: str, token: str) -> list[dict]:
+def _search_github_issues(q: str, headers: dict, source: str) -> list[dict]:
+    params = urllib.parse.urlencode(
+        {"q": q, "sort": "reactions", "order": "desc", "per_page": 15})
+    data = _get_json(f"https://api.github.com/search/issues?{params}", headers)
     signals = []
+    for item in (data or {}).get("items", []):
+        reactions = (item.get("reactions") or {}).get("total_count", 0)
+        signals.append({
+            "source": source,
+            "title": item.get("title") or "",
+            "url": item.get("html_url") or "",
+            "score": reactions + item.get("comments", 0),
+        })
+    return signals
+
+
+def fetch_github_issues(since: str, token: str) -> list[dict]:
+    """Keyword search across all of GitHub for recent agent-related issues."""
     headers = {"Accept": "application/vnd.github+json"}
     if token:
         headers["Authorization"] = f"token {token}"
-    for keyword in ("llm", '"ai agent"'):
-        q = f"{keyword} is:issue is:open created:>{since} reactions:>2"
-        params = urllib.parse.urlencode(
-            {"q": q, "sort": "reactions", "order": "desc", "per_page": 15})
-        data = _get_json(f"https://api.github.com/search/issues?{params}", headers)
-        for item in (data or {}).get("items", []):
-            reactions = (item.get("reactions") or {}).get("total_count", 0)
-            signals.append({
-                "source": "github",
-                "title": item.get("title") or "",
-                "url": item.get("html_url") or "",
-                "score": reactions + item.get("comments", 0),
-            })
+    signals = []
+    for keyword in AGENT_KEYWORDS:
+        q = f'"{keyword}" is:issue is:open created:>{since} reactions:>2'
+        signals += _search_github_issues(q, headers, "github")
         time.sleep(2)  # search API rate limit is per-minute; stay polite
+    return signals
+
+
+def fetch_github_agent_repos(token: str) -> list[dict]:
+    """Most-reacted-to open issues directly from core agent-framework repos —
+    sharper, pre-validated signal than a general keyword search."""
+    headers = {"Accept": "application/vnd.github+json"}
+    if token:
+        headers["Authorization"] = f"token {token}"
+    signals = []
+    for repo in AGENT_FRAMEWORK_REPOS:
+        q = f"is:issue is:open reactions:>1 repo:{repo}"
+        signals += _search_github_issues(q, headers, "github:" + repo)
+        time.sleep(2)
     return signals
 
 
 def fetch_stackoverflow(since_ts: int) -> list[dict]:
     signals = []
-    for tag in ("large-language-model", "openai-api", "langchain"):
+    for tag in ("langchain", "langgraph", "openai-api", "autogen"):
         params = urllib.parse.urlencode({
             "order": "desc", "sort": "votes", "tagged": tag,
             "site": "stackoverflow", "fromdate": since_ts, "pagesize": 10,
@@ -104,16 +148,23 @@ def fetch_stackoverflow(since_ts: int) -> list[dict]:
 # ── Distillation ─────────────────────────────────────────────────────────────
 
 SYSTEM_PROMPT = (
-    "You are AutoScout's problem analyst. You identify real, recurring "
-    "problems developers face in the AI/LLM ecosystem from community signals."
+    "You are AutoScout's problem analyst. You identify real, recurring problems "
+    "developers face building and operating agentic AI systems — agent "
+    "orchestration, agent memory, evaluation/observability, guardrails and "
+    "security, multi-agent coordination, tool-calling/MCP protocols, and agent "
+    "ops/deployment — from community signals."
 )
 
 USER_TEMPLATE = """\
 From the community signals below (source | engagement | title | url), extract \
-up to {n} DISTINCT real problems developers face in the AI/LLM domain.
+up to {n} DISTINCT real problems developers face building or operating \
+agentic AI systems (agent orchestration, memory, evals, observability, \
+guardrails/security, multi-agent coordination, tool-calling/MCP, agent ops).
 
 Only include genuine pain points (bugs, missing tooling, recurring frustrations, \
-unmet needs) — skip product announcements, news and opinion pieces.
+unmet needs) — skip product announcements, news and opinion pieces, and skip \
+anything that isn't really about agentic systems (e.g. generic model-quality \
+complaints with no agent/tooling angle).
 
 Return a JSON array; each element:
 {{"title": "short problem name (max 8 words)",
@@ -152,10 +203,12 @@ def main() -> None:
     since_ts = int(since_dt.timestamp())
     since_day = since_dt.date().isoformat()
 
-    print("─── AutoScout: scouting real AI problems ───")
+    print("─── AutoScout: scouting real agentic-AI problems ───")
+    scout_pat = os.environ.get("SCOUT_PAT", "")
     signals = (
         fetch_hackernews(since_ts)
-        + fetch_github_issues(since_day, os.environ.get("SCOUT_PAT", ""))
+        + fetch_github_issues(since_day, scout_pat)
+        + fetch_github_agent_repos(scout_pat)
         + fetch_stackoverflow(since_ts)
     )
     signals = [s for s in signals if s["title"] and s["url"]]
