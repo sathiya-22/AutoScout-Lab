@@ -37,12 +37,12 @@ jobs:
           SCOUT_PAT: ${{ secrets.SCOUT_PAT }}
         run: python scripts/generate_prototype.py
 
-      - name: Commit problem-log updates
+      - name: Commit problem-log and registry updates
         run: |
-          if [ ! -d problems ]; then echo "No problem log yet."; exit 0; fi
           git config user.name  "AutoScout Bot"
           git config user.email "autoscout-bot@users.noreply.github.com"
-          git add problems/
+          if [ -d problems ]; then git add problems/; fi
+          if [ -d repos ]; then git add repos/; fi
           git diff --staged --quiet && echo "No log changes." || {
             git commit -m "chore(scout): update problem log $(date -u +%Y-%m-%d)"
             git push
