@@ -125,7 +125,10 @@ SYSTEM_PROMPT = (
     "2. The growth log is exactly what is shown to you. If it says 'none "
     "yet', do not invent any prior entries or echo that placeholder text "
     "into the file — write ONLY the one new line, using the exact date "
-    "given, not a guessed or remembered one."
+    "given, not a guessed or remembered one.\n"
+    "3. If you introduce a new import/package, you MUST also update the "
+    "dependency manifest (requirements.txt, package.json, go.mod, etc.) in "
+    "the same response — an import with no declared dependency is broken."
 )
 
 MATURE_TEMPLATE = """\
