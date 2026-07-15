@@ -116,7 +116,16 @@ SYSTEM_PROMPT = (
     "per cycle — a real feature, error handling, input validation, tests, "
     "docs, packaging, or a genuine bug fix — without breaking what already "
     "works. Never regenerate the whole project from scratch; only output "
-    "files you are creating or changing."
+    "files you are creating or changing.\n\n"
+    "Hard rules:\n"
+    "1. NEVER replace real, working logic (a real API call, a real "
+    "computation) with a stub, mock, placeholder, or simulated/fake data — "
+    "that is a regression, not an increment, even if the surrounding code "
+    "looks cleaner.\n"
+    "2. The growth log is exactly what is shown to you. If it says 'none "
+    "yet', do not invent any prior entries or echo that placeholder text "
+    "into the file — write ONLY the one new line, using the exact date "
+    "given, not a guessed or remembered one."
 )
 
 MATURE_TEMPLATE = """\
@@ -126,40 +135,61 @@ becoming a genuinely complete, production-quality project.
 Repo: {full_name}
 Original topic/problem: {topic}
 Iteration: {iteration}
+Today's date (use this exact date in the log, do not guess another one): {today}
 
-Growth log so far (do not repeat any increment already listed here):
+Growth log so far — this is the COMPLETE history, verbatim, nothing is \
+hidden from you:
 {growth_log}
 
 Current files:
 {file_dump}
 
 Pick the SINGLE most valuable next increment. Output ONLY the files you are \
-creating or modifying — leave everything else untouched. Use this exact \
+creating or modifying — leave everything else untouched. Do not remove or \
+fake any existing real functionality (see hard rule 1). Use this exact \
 format, one header per file, with the real filename/path substituted in:
 
 === <filename-or-relative-path> ===
 <the file's full new content>
 
-You MUST include an updated === {growth_log_name} === as one of the output \
-files: take the growth log shown above and append exactly one new dated \
-bullet line describing this increment (keep all prior lines unchanged).
+You MUST include an updated === {growth_log_name} === with exactly ONE new \
+bullet appended, dated {today} — keep every prior line exactly as shown \
+above, and do not add any entry that isn't shown above plus this one new one.
 
 No markdown fences inside any file's content.
 """
 
 
 def build_prompt(entry: dict, files: dict[str, str]) -> str:
-    growth_log = files.get(GROWTH_LOG, "(none yet — this is the first maturation cycle.)")
+    growth_log = files.get(GROWTH_LOG,
+                           "(none yet — this is truly the first maturation cycle; "
+                           "do not invent any earlier entries.)")
     dump = "\n\n".join(f"----- FILE: {path} -----\n{content}"
                        for path, content in files.items())
     return MATURE_TEMPLATE.format(
         full_name=entry["full_name"],
         topic=entry.get("topic", entry["name"]),
         iteration=entry.get("iterations", 0) + 1,
+        today=date.today().isoformat(),
         growth_log=growth_log,
         file_dump=dump,
         growth_log_name=GROWTH_LOG,
     )
+
+
+def sanitize_log(old_log: str, model_log: str, today: str) -> str:
+    """Rebuild the log deterministically instead of trusting the model to
+    reproduce prior lines unchanged and not invent/echo placeholder text:
+    keep the real old_log verbatim, and append ONLY genuinely-new lines
+    dated today. Gemini fabricated a wrong-dated entry AND, separately,
+    leaked the prompt's '(none yet...)' placeholder text verbatim into a
+    committed file in testing — prompting alone isn't reliable enough."""
+    old_lines = set(old_log.splitlines())
+    new_dated_lines = [line for line in model_log.splitlines()
+                      if line.strip() and line not in old_lines and today in line]
+    if not new_dated_lines:
+        return old_log  # model didn't produce a valid dated line — caller falls back
+    return (old_log.rstrip("\n") + "\n" if old_log.strip() else "") + "\n".join(new_dated_lines)
 
 
 def commit_summary(old_log: str, new_log: str) -> str:
@@ -251,13 +281,16 @@ def main() -> None:
         sys.exit(1)
 
     iteration = entry.get("iterations", 0) + 1
-    new_growth_log = edited.get(GROWTH_LOG)
-    if not new_growth_log:
-        # Defensive fallback — the model should always include this, but
-        # don't let a slip silently break the growth log's continuity.
-        new_growth_log = (old_growth_log + f"\n- {date.today().isoformat()}: "
-                          f"iteration {iteration} (see commit for details)")
-        edited[GROWTH_LOG] = new_growth_log
+    today = date.today().isoformat()
+    model_growth_log = edited.get(GROWTH_LOG, "")
+    new_growth_log = sanitize_log(old_growth_log, model_growth_log, today) \
+        if model_growth_log else old_growth_log
+    if new_growth_log == old_growth_log:
+        # model gave no usable dated line — fall back to a generic one so
+        # the log still records that an iteration happened
+        new_growth_log = (old_growth_log.rstrip("\n") + "\n" if old_growth_log.strip() else "") + \
+                         f"- {today}: iteration {iteration} (see commit for details)"
+    edited[GROWTH_LOG] = new_growth_log
 
     summary = commit_summary(old_growth_log, new_growth_log)
 
