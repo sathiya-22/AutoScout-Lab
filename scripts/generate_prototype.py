@@ -34,6 +34,7 @@ import urllib.request
 from datetime import date
 from pathlib import Path
 
+from digest import update_section
 from repo_registry import add_repo
 from scout_common import call_gemini, load_problems, parse_sections, save_problems
 
@@ -276,11 +277,17 @@ def main() -> None:
     repo_name = f"{slugify(topic)}-{today.isoformat()}"
     owner = get_authenticated_user(gh_token)
     repo_url = f"https://github.com/{owner}/{repo_name}"
+    scouted_today = sum(1 for p in load_problems() if p["date"] == today.isoformat())
 
     if repo_exists(owner, repo_name, gh_token):
         print(f"Repo {owner}/{repo_name} already exists — nothing to do.")
         if problem:
             mark_prototyped(problem["id"], repo_url)
+        update_section(gh_token, "generate",
+                      f"**New repo**: [{repo_name}]({repo_url}) (already existed this run)\n"
+                      f"**Source**: {'scouted problem' if problem else 'fallback topic pool'}\n"
+                      f"**Topic**: {topic}\n\n"
+                      f"Problems scouted today: {scouted_today}")
         sys.exit(0)
 
     print(f"─── AutoScout: generating 1 project ───")
@@ -299,6 +306,12 @@ def main() -> None:
     if problem:
         mark_prototyped(problem["id"], repo_url)
         print(f"Marked problem '{problem['id']}' as prototyped.")
+
+    update_section(gh_token, "generate",
+                  f"**New repo**: [{repo_name}]({repo_url})\n"
+                  f"**Source**: {'scouted problem' if problem else 'fallback topic pool'}\n"
+                  f"**Topic**: {topic}\n\n"
+                  f"Problems scouted today: {scouted_today}")
 
     print(f"\nDone — {repo_url}")
 

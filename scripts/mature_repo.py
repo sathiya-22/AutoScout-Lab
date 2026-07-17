@@ -28,6 +28,7 @@ import urllib.request
 from datetime import date
 from pathlib import Path
 
+from digest import update_section
 from repo_registry import load_registry, save_registry, sync_registry
 from scout_common import call_gemini, parse_sections
 
@@ -307,6 +308,10 @@ def main() -> None:
     entry["iterations"] = iteration
     entry["last_matured"] = date.today().isoformat()
     save_registry(registry)
+
+    update_section(gh_token, "mature",
+                  f"**Repo**: [{full_name}](https://github.com/{full_name}) — iteration {iteration}\n"
+                  f"**Change**: {summary}")
 
     print(f"\nDone — {full_name} advanced to iteration {iteration}: {summary}")
 
