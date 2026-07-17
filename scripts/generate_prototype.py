@@ -35,8 +35,34 @@ from datetime import date
 from pathlib import Path
 
 from digest import update_section
-from repo_registry import add_repo
+from repo_registry import AUTOSCOUT_DESCRIPTION_PREFIX, add_repo
 from scout_common import call_gemini, load_problems, parse_sections, save_problems
+
+GITHUB_TOPICS = ["autoscout", "ai-generated", "agentic-ai", "llm", "automation"]
+
+MIT_LICENSE = """\
+MIT License
+
+Copyright (c) {year} sathiya-22
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+"""
 
 # ── Fallback topic pool (used only when the problem log has nothing new) ─────
 # Themed around agent orchestration, memory, evals/observability,
@@ -218,16 +244,22 @@ def repo_exists(owner: str, name: str, token: str) -> bool:
     return bool(_gh_api("GET", f"/repos/{owner}/{name}", token))
 
 
-def create_repo(name: str, token: str) -> dict:
+def create_repo(name: str, topic: str, token: str) -> dict:
     return _gh_api("POST", "/user/repos", token, {
         "name": name,
         "private": False,
-        "description": "Auto-generated AI prototype by AutoScout",
+        "description": f"{AUTOSCOUT_DESCRIPTION_PREFIX} {topic}",
         "auto_init": False,
     })
 
 
+def set_repo_topics(owner: str, name: str, token: str) -> None:
+    _gh_api("PUT", f"/repos/{owner}/{name}/topics", token, {"names": GITHUB_TOPICS})
+
+
 def push_prototype(clone_url: str, files: dict[str, str], token: str) -> None:
+    files = dict(files)
+    files.setdefault("LICENSE", MIT_LICENSE.format(year=date.today().year).rstrip("\n"))
     with tempfile.TemporaryDirectory() as tmp:
         proto_dir = Path(tmp)
         for filename, content in files.items():
@@ -299,8 +331,9 @@ def main() -> None:
 
     files = generate_prototype_files(gemini_key, prompt)
 
-    repo = create_repo(repo_name, gh_token)
+    repo = create_repo(repo_name, topic, gh_token)
     push_prototype(repo["clone_url"], files, gh_token)
+    set_repo_topics(owner, repo_name, gh_token)
     add_repo(f"{owner}/{repo_name}", repo_name, today.isoformat(), topic)
 
     if problem:
