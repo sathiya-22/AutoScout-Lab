@@ -69,22 +69,58 @@ class TestSanitizeLog(unittest.TestCase):
 
 
 class TestRotation(unittest.TestCase):
+    TODAY = __import__("datetime").date(2026, 7, 19)
+
     def test_never_matured_first(self):
         reg = [
             {"full_name": "a/1", "created": "2026-07-10", "last_matured": "2026-07-13"},
             {"full_name": "a/2", "created": "2026-07-08", "last_matured": None},
         ]
-        self.assertEqual(pick_due_repo(reg)["full_name"], "a/2")
+        self.assertEqual(pick_due_repo(reg, self.TODAY)["full_name"], "a/2")
 
     def test_oldest_last_matured_next(self):
         reg = [
             {"full_name": "a/1", "created": "2026-07-10", "last_matured": "2026-07-13"},
             {"full_name": "a/2", "created": "2026-07-08", "last_matured": "2026-07-10"},
         ]
-        self.assertEqual(pick_due_repo(reg)["full_name"], "a/2")
+        self.assertEqual(pick_due_repo(reg, self.TODAY)["full_name"], "a/2")
 
     def test_empty(self):
         self.assertIsNone(pick_due_repo([]))
+
+    def test_dormant_repo_skipped_for_active_one(self):
+        # a/1 is old + unstarred (dormant) and visited recently -> skipped
+        # even though a/2 was visited more recently, because a/2 is starred
+        reg = [
+            {"full_name": "a/1", "created": "2026-05-01", "stars": 0,
+             "last_matured": "2026-07-10"},
+            {"full_name": "a/2", "created": "2026-05-01", "stars": 3,
+             "last_matured": "2026-07-15"},
+        ]
+        self.assertEqual(pick_due_repo(reg, self.TODAY)["full_name"], "a/2")
+
+    def test_dormant_repo_due_after_a_month(self):
+        reg = [
+            {"full_name": "a/1", "created": "2026-05-01", "stars": 0,
+             "last_matured": "2026-06-01"},  # 48 days untouched -> due
+            {"full_name": "a/2", "created": "2026-05-01", "stars": 3,
+             "last_matured": "2026-07-15"},
+        ]
+        self.assertEqual(pick_due_repo(reg, self.TODAY)["full_name"], "a/1")
+
+    def test_young_unstarred_repo_is_active(self):
+        reg = [
+            {"full_name": "a/1", "created": "2026-07-18", "stars": 0,
+             "last_matured": None},
+        ]
+        self.assertEqual(pick_due_repo(reg, self.TODAY)["full_name"], "a/1")
+
+    def test_all_dormant_never_stalls(self):
+        reg = [
+            {"full_name": "a/1", "created": "2026-05-01", "stars": 0,
+             "last_matured": "2026-07-18"},
+        ]
+        self.assertIsNotNone(pick_due_repo(reg, self.TODAY))
 
 
 class TestCommitSummary(unittest.TestCase):

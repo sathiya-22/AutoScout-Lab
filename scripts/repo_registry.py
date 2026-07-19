@@ -100,6 +100,9 @@ def sync_registry(owner: str, token: str) -> list[dict]:
                     "iterations": 0,
                     "last_matured": None,
                 }
+            # Refreshed on every sync — outside interest is the liveliness
+            # signal the tiered rotation prioritizes by.
+            entries[full_name]["stars"] = r.get("stargazers_count", 0)
         if len(repos) < 100:
             break
         page += 1

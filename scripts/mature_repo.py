@@ -99,12 +99,41 @@ def fetch_repo_context(full_name: str, token: str) -> dict[str, str] | None:
 
 # ── Rotation ─────────────────────────────────────────────────────────────────
 
-def pick_due_repo(registry: list[dict]) -> dict | None:
-    """Never-matured repos first (oldest created first), then oldest
-    last_matured first — this is what keeps the daily budget flat."""
+ACTIVE_AGE_DAYS = 14    # new repos stay in the active tier this long
+DORMANT_REVISIT_DAYS = 30  # untouched dormant repos become due after this
+
+
+def is_active(entry: dict, today: date | None = None) -> bool:
+    """A repo is 'active' if it shows signs of life (stars) or is still
+    young. Everything else is dormant and only revisited monthly — so a
+    fleet growing +1/day forever doesn't dilute attention on the repos
+    that actually matter."""
+    today = today or date.today()
+    if entry.get("stars", 0) > 0:
+        return True
+    created = date.fromisoformat(entry.get("created", "2000-01-01"))
+    return (today - created).days <= ACTIVE_AGE_DAYS
+
+
+def pick_due_repo(registry: list[dict], today: date | None = None) -> dict | None:
+    """Tiered rotation: active repos (starred or young) rotate freely;
+    dormant ones only become eligible after DORMANT_REVISIT_DAYS untouched.
+    Within the eligible pool: never-matured first (oldest created), then
+    oldest-last-matured — same ordering as before the tiers existed, and
+    still a flat +1 Gemini call/day regardless of fleet size."""
     if not registry:
         return None
-    return sorted(registry,
+    today = today or date.today()
+
+    def days_since_visit(e: dict) -> int:
+        if not e.get("last_matured"):
+            return 10**6
+        return (today - date.fromisoformat(e["last_matured"])).days
+
+    eligible = [e for e in registry
+                if is_active(e, today) or days_since_visit(e) >= DORMANT_REVISIT_DAYS]
+    pool = eligible or registry  # never stall the daily pass entirely
+    return sorted(pool,
                   key=lambda r: (r.get("last_matured") or "0000-00-00",
                                  r.get("created", "9999-99-99")))[0]
 

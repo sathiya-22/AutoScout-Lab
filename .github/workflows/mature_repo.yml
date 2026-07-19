@@ -30,11 +30,16 @@ jobs:
           SCOUT_PAT: ${{ secrets.SCOUT_PAT }}
         run: python scripts/mature_repo.py
 
-      - name: Commit registry updates
+      - name: Regenerate fleet dashboard
+        continue-on-error: true   # a dashboard hiccup must not fail the run
+        run: python scripts/fleet_report.py
+
+      - name: Commit registry and dashboard updates
         run: |
           git config user.name  "AutoScout Bot"
           git config user.email "autoscout-bot@users.noreply.github.com"
           if [ -d repos ]; then git add repos/; fi
+          if [ -f FLEET.md ]; then git add FLEET.md; fi
           git diff --staged --quiet && echo "No registry changes." || {
             git commit -m "chore(autoscout): registry update $(date -u +%Y-%m-%d)"
             git push
