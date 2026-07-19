@@ -36,9 +36,56 @@ from pathlib import Path
 
 from digest import update_section
 from repo_registry import AUTOSCOUT_DESCRIPTION_PREFIX, add_repo
-from scout_common import call_gemini, load_problems, parse_sections, save_problems
+from scout_common import (broken_python_files, call_gemini, load_problems,
+                          parse_sections, save_problems)
 
-GITHUB_TOPICS = ["autoscout", "ai-generated", "agentic-ai", "llm", "automation"]
+# Every repo gets these three so the fleet stays discoverable as a set...
+BASE_TOPICS = ["autoscout", "ai-generated", "agentic-ai"]
+# ...plus topic-specific tags derived from the repo's actual problem, so
+# repos are individually discoverable instead of all sharing one tag list.
+# Substring match against the slugified topic -> canonical GitHub topic.
+TOPIC_KEYWORD_MAP = {
+    "memory": "agent-memory",
+    "orchestration": "agent-orchestration",
+    "coordination": "multi-agent",
+    "multi-agent": "multi-agent",
+    "observability": "observability",
+    "debug": "debugging",
+    "guardrail": "guardrails",
+    "security": "ai-security",
+    "mcp": "mcp",
+    "tool": "tool-calling",
+    "eval": "agent-evaluation",
+    "deploy": "deployment",
+    "operational": "llmops",
+    "cost": "llm-cost",
+    "token": "token-optimization",
+    "prompt": "prompt-engineering",
+    "state": "state-management",
+    "persistence": "state-management",
+    "checkpoint": "checkpointing",
+    "office": "document-processing",
+    "document": "document-processing",
+    "hardware": "edge-ai",
+    "constrained": "edge-ai",
+    "local": "local-llm",
+    "desktop": "local-llm",
+    "retrieval": "rag",
+    "rag": "rag",
+    "streaming": "streaming",
+    "performance": "performance",
+    "validat": "validation",
+    "structured": "structured-output",
+}
+
+
+def derive_topics(topic: str) -> list[str]:
+    slug = slugify(topic)
+    specific = []
+    for keyword, tag in TOPIC_KEYWORD_MAP.items():
+        if keyword in slug and tag not in specific:
+            specific.append(tag)
+    return BASE_TOPICS + specific[:7]  # GitHub caps repos at 20 topics; stay well under
 
 MIT_LICENSE = """\
 MIT License
@@ -253,8 +300,8 @@ def create_repo(name: str, topic: str, token: str) -> dict:
     })
 
 
-def set_repo_topics(owner: str, name: str, token: str) -> None:
-    _gh_api("PUT", f"/repos/{owner}/{name}/topics", token, {"names": GITHUB_TOPICS})
+def set_repo_topics(owner: str, name: str, topics: list[str], token: str) -> None:
+    _gh_api("PUT", f"/repos/{owner}/{name}/topics", token, {"names": topics})
 
 
 def push_prototype(clone_url: str, files: dict[str, str], token: str) -> None:
@@ -330,10 +377,16 @@ def main() -> None:
           f"(~{MAX_OUTPUT_TOKENS/250000*100:.1f}% of 250k daily budget)")
 
     files = generate_prototype_files(gemini_key, prompt)
+    # Warn-only here (vs. abort in the maturation loops): a brand-new repo
+    # with a flagged file still beats skipping the day entirely, and the
+    # advancement passes will get a shot at fixing it.
+    broken_python_files(files)
 
     repo = create_repo(repo_name, topic, gh_token)
     push_prototype(repo["clone_url"], files, gh_token)
-    set_repo_topics(owner, repo_name, gh_token)
+    topics = derive_topics(topic)
+    set_repo_topics(owner, repo_name, topics, gh_token)
+    print(f"Topics     : {', '.join(topics)}")
     add_repo(f"{owner}/{repo_name}", repo_name, today.isoformat(), topic)
 
     if problem:

@@ -20,6 +20,7 @@ import time
 import urllib.parse
 import urllib.request
 from datetime import date, datetime, timedelta, timezone
+from difflib import SequenceMatcher
 
 from scout_common import (call_gemini, load_problems, parse_json_lenient,
                           save_problems, slugify)
@@ -166,6 +167,10 @@ unmet needs) — skip product announcements, news and opinion pieces, and skip \
 anything that isn't really about agentic systems (e.g. generic model-quality \
 complaints with no agent/tooling angle).
 
+These problems are ALREADY tracked — do not re-extract them or close \
+rewordings of them:
+{known_titles}
+
 Return a JSON array; each element:
 {{"title": "short problem name (max 8 words)",
   "problem": "2-3 sentences: what the problem is and who it affects",
@@ -177,20 +182,36 @@ Signals:
 """
 
 
-def distill(api_key: str, signals: list[dict]) -> list[dict]:
+def distill(api_key: str, signals: list[dict], known_titles: list[str]) -> list[dict]:
     lines = "\n".join(
         f"{s['source']} | {s['score']} | {s['title']} | {s['url']}"
         for s in signals
     )
+    known = "\n".join(f"- {t}" for t in known_titles[-40:]) or "(none yet)"
     raw = call_gemini(
         api_key,
-        USER_TEMPLATE.format(n=MAX_NEW_PROBLEMS, signals=lines),
+        USER_TEMPLATE.format(n=MAX_NEW_PROBLEMS, signals=lines, known_titles=known),
         SYSTEM_PROMPT,
         max_tokens=4000,
         json_mode=True,
     )
     parsed = parse_json_lenient(raw)
     return parsed if isinstance(parsed, list) else []
+
+
+def find_near_duplicate(title: str, existing_titles: list[str]) -> str | None:
+    """Return the existing title this one nearly duplicates, if any.
+
+    Slug-equality alone missed real rewordings ('LLMs consume excessive
+    tokens before processing prompts' vs 'LLMs process excessive tokens
+    before prompt' both got repos). Sorting tokens first makes word-order
+    and small phrasing changes irrelevant to the comparison."""
+    norm = " ".join(sorted(slugify(title).split("-")))
+    for other in existing_titles:
+        other_norm = " ".join(sorted(slugify(other).split("-")))
+        if SequenceMatcher(None, norm, other_norm).ratio() >= 0.75:
+            return other
+    return None
 
 
 # ── Main ─────────────────────────────────────────────────────────────────────
@@ -234,9 +255,10 @@ def main() -> None:
         print("ERROR: GEMINI_API_KEY is not set.", file=sys.stderr)
         sys.exit(1)
 
-    candidates = distill(api_key, signals)
-
     problems = load_problems()
+    known_titles = [p["title"] for p in problems]
+    candidates = distill(api_key, signals, known_titles)
+
     known_ids = {p["id"] for p in problems}
     added = 0
     for c in candidates:
@@ -246,6 +268,11 @@ def main() -> None:
         pid = slugify(title)
         if pid in known_ids:
             continue
+        dup_of = find_near_duplicate(title, known_titles)
+        if dup_of:
+            print(f"  ~ skipped near-duplicate: {title!r} ≈ {dup_of!r}")
+            continue
+        known_titles.append(title)
         problems.append({
             "id": pid,
             "date": date.today().isoformat(),

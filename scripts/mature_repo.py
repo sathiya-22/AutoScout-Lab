@@ -30,7 +30,7 @@ from pathlib import Path
 
 from digest import update_section
 from repo_registry import load_registry, save_registry, sync_registry
-from scout_common import call_gemini, parse_sections
+from scout_common import broken_python_files, call_gemini, parse_sections
 
 GITHUB_API = "https://api.github.com"
 MAX_OUTPUT_TOKENS = 7000
@@ -282,6 +282,13 @@ def main() -> None:
         print("ERROR: no sections found in model response — retry next run.",
              file=sys.stderr)
         print(raw[:1000], file=sys.stderr)
+        sys.exit(1)
+
+    if broken_python_files(edited):
+        # Pushing syntactically-broken code would degrade a working repo —
+        # abort and let the next cycle retry from a clean slate.
+        print("ERROR: model produced Python that doesn't compile — "
+             "aborting this iteration without pushing.", file=sys.stderr)
         sys.exit(1)
 
     iteration = entry.get("iterations", 0) + 1
