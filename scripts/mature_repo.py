@@ -14,7 +14,13 @@ Each matured repo carries its own MATURATION_LOG.md so the model has
 continuity across cycles without needing this orchestrator to remember
 anything beyond the iteration count.
 
-Budget: 1 Gemini request per run (~7k output tokens).
+Before pushing, the candidate files run through a sandboxed runtime check
+(verify.py) — not just "does it parse" but "does it actually run" — with up
+to 2 model-driven fix attempts if it doesn't. A pass that's still broken
+after retries aborts without pushing rather than degrading a working repo.
+
+Budget: 1-3 Gemini requests per run (~7k output tokens each) — the common
+case is 1; extra calls only happen on a verification failure.
 """
 
 import base64
@@ -31,6 +37,27 @@ from pathlib import Path
 from digest import update_section
 from repo_registry import load_registry, save_registry, sync_registry
 from scout_common import broken_python_files, call_gemini, parse_sections
+from verify import verify_python_repo
+
+MAX_VERIFY_RETRIES = 2
+
+FIX_TEMPLATE = """\
+Your previous output for this file set failed verification.
+
+Error: {error}
+
+Current files (these are what you just wrote — the bug is somewhere in here):
+{file_dump}
+
+Fix ONLY what's needed to resolve this error. Output the corrected file(s) \
+in EXACTLY this form (only files you're changing, real filename \
+substituted in, never the literal word "path"):
+
+=== <filename-or-relative-path> ===
+<the file's full corrected content>
+
+No markdown fences inside file content.
+"""
 
 GITHUB_API = "https://api.github.com"
 MAX_OUTPUT_TOKENS = 7000
@@ -225,6 +252,37 @@ def sanitize_log(old_log: str, model_log: str, today: str) -> str:
     return (old_log.rstrip("\n") + "\n" if old_log.strip() else "") + "\n".join(new_dated_lines)
 
 
+def verify_with_retries(api_key: str, files: dict[str, str]) -> tuple[dict[str, str] | None, str]:
+    """Sandboxed runtime check with up to MAX_VERIFY_RETRIES model-driven fix
+    attempts. Returns (verified_files, reason) on success, (None, reason) if
+    still broken after all retries — caller aborts the push in that case."""
+    current = files
+    for attempt in range(1, MAX_VERIFY_RETRIES + 2):
+        broken = broken_python_files(current)
+        result = ({"ok": False, "reason": f"{broken[0]} doesn't compile"} if broken
+                 else verify_python_repo(current))
+        if result["ok"]:
+            print(f"  Verify attempt {attempt}: OK ({result['reason']})")
+            return current, result["reason"]
+
+        print(f"  Verify attempt {attempt}: FAILED ({result['reason']})")
+        if attempt == MAX_VERIFY_RETRIES + 1:
+            return None, result["reason"]
+
+        dump = "\n\n".join(f"----- FILE: {p} -----\n{c}" for p, c in current.items())
+        try:
+            raw = call_gemini(api_key, FIX_TEMPLATE.format(error=result["reason"], file_dump=dump),
+                              SYSTEM_PROMPT, max_tokens=MAX_OUTPUT_TOKENS)
+        except RuntimeError as e:
+            print(f"  Fix attempt failed to call Gemini: {e}")
+            return None, result["reason"]
+        fix = parse_sections(raw)
+        if not fix:
+            return None, result["reason"]
+        current = {**current, **fix}
+    return None, "exhausted retries"  # unreachable, satisfies static analysis
+
+
 def commit_summary(old_log: str, new_log: str) -> str:
     old_lines = set(old_log.splitlines())
     for line in new_log.splitlines():
@@ -313,12 +371,14 @@ def main() -> None:
         print(raw[:1000], file=sys.stderr)
         sys.exit(1)
 
-    if broken_python_files(edited):
-        # Pushing syntactically-broken code would degrade a working repo —
-        # abort and let the next cycle retry from a clean slate.
-        print("ERROR: model produced Python that doesn't compile — "
-             "aborting this iteration without pushing.", file=sys.stderr)
+    verified, reason = verify_with_retries(gemini_key, edited)
+    if verified is None:
+        # Pushing broken code would degrade a working repo — abort and let
+        # the next cycle retry from a clean slate.
+        print(f"ERROR: still broken after {MAX_VERIFY_RETRIES} fix attempt(s) "
+             f"({reason}) — aborting this iteration without pushing.", file=sys.stderr)
         sys.exit(1)
+    edited = verified
 
     iteration = entry.get("iterations", 0) + 1
     today = date.today().isoformat()

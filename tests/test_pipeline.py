@@ -1,21 +1,26 @@
 #!/usr/bin/env python3
 """Unit tests for AutoScout-Lab's pipeline logic.
 
-Pure-logic only — no network, no Gemini, no filesystem side effects.
+Mostly pure-logic — no network, no Gemini, no filesystem side effects —
+except TestVerifyPythonRepo, which really does spin up a venv and run
+generated code in a sandbox (that's the point of the module under test).
 Run: python3 -m unittest discover tests -v
 """
 
 import sys
 import unittest
+import unittest.mock
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent / "scripts"))
 
+import mature_repo  # noqa: E402 — imported as a module so call_gemini can be patched
 from generate_prototype import derive_topics  # noqa: E402
 from mature_repo import commit_summary, pick_due_repo, sanitize_log  # noqa: E402
 from scout_common import (broken_python_files, parse_json_lenient,  # noqa: E402
                           parse_sections, slugify)
 from scout_problems import find_near_duplicate  # noqa: E402
+from verify import verify_python_repo  # noqa: E402
 
 
 class TestParseSections(unittest.TestCase):
@@ -161,6 +166,56 @@ class TestNearDuplicate(unittest.TestCase):
 class TestSlugify(unittest.TestCase):
     def test_basic(self):
         self.assertEqual(slugify("Hello, World! 123"), "hello-world-123")
+
+
+class TestVerifyPythonRepo(unittest.TestCase):
+    """Real sandboxed execution — the whole point of this module is to
+    catch bugs static analysis (the syntax gate) can't see."""
+
+    def test_no_entrypoint_skips(self):
+        self.assertTrue(verify_python_repo({"README.md": "hi"})["ok"])
+
+    def test_clean_exit_passes(self):
+        self.assertTrue(verify_python_repo({"main.py": "print('hi')\n"})["ok"])
+
+    def test_name_error_flagged(self):
+        result = verify_python_repo({"main.py": "print(undefined_var)\n"})
+        self.assertFalse(result["ok"])
+        self.assertIn("NameError", result["reason"])
+
+    def test_missing_dependency_flagged(self):
+        result = verify_python_repo({"main.py": "import nonexistent_pkg_xyz\n"})
+        self.assertFalse(result["ok"])
+
+    def test_auth_failure_with_dummy_key_passes(self):
+        code = ("import os, sys\n"
+               "if os.environ.get('GEMINI_API_KEY') == 'dummy-key-for-verification':\n"
+               "    print('401 Unauthorized', file=sys.stderr); sys.exit(1)\n")
+        self.assertTrue(verify_python_repo({"main.py": code})["ok"])
+
+    def test_interactive_input_eof_passes(self):
+        self.assertTrue(verify_python_repo({"main.py": "input('prompt> ')\n"})["ok"])
+
+
+class TestVerifyWithRetries(unittest.TestCase):
+    def test_succeeds_first_try_no_model_call_needed(self):
+        verified, _ = mature_repo.verify_with_retries("fake-key", {"main.py": "print('hi')\n"})
+        self.assertIsNotNone(verified)
+
+    def test_fix_applied_on_retry(self):
+        broken = {"main.py": "print(undefined_var)\n"}
+        fixed_raw = "=== main.py ===\nprint('fixed')\n"
+        with unittest.mock.patch("mature_repo.call_gemini", return_value=fixed_raw):
+            verified, _ = mature_repo.verify_with_retries("fake-key", broken)
+        self.assertIsNotNone(verified)
+        self.assertEqual(verified["main.py"], "print('fixed')")
+
+    def test_gives_up_after_retries_exhausted(self):
+        broken = {"main.py": "print(undefined_var)\n"}
+        still_broken_raw = "=== main.py ===\nprint(undefined_var)\n"
+        with unittest.mock.patch("mature_repo.call_gemini", return_value=still_broken_raw):
+            verified, _ = mature_repo.verify_with_retries("fake-key", broken)
+        self.assertIsNone(verified)
 
 
 if __name__ == "__main__":
