@@ -220,10 +220,13 @@ class TestVerifyWithRetries(unittest.TestCase):
 
     def test_untouched_dependent_file_break_is_caught(self):
         # main.py isn't edited this pass, but the edited config.py breaks it —
-        # verifying edited_files alone would miss this entirely.
+        # verifying edited_files alone would miss this entirely. Mock the
+        # fix attempts (never fixes it) so this doesn't need google-genai.
         base = {"main.py": "from config import VALUE\nprint(VALUE)\n"}
         edited = {"config.py": "# VALUE removed by mistake\n"}
-        verified, reason = mature_repo.verify_with_retries("fake-key", base, edited)
+        still_broken_raw = "=== config.py ===\n# still broken\n"
+        with unittest.mock.patch("mature_repo.call_gemini", return_value=still_broken_raw):
+            verified, reason = mature_repo.verify_with_retries("fake-key", base, edited)
         self.assertIsNone(verified)
         self.assertIn("ImportError", reason)
 
