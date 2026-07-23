@@ -1,22 +1,22 @@
 # AutoScout Fleet
 
-Auto-generated daily — 21 repos, 10 Gemini maturation passes, 9 Groq advancement passes. Last updated 2026-07-22.
+Auto-generated daily — 22 repos, 11 Gemini maturation passes, 10 Groq advancement passes. Last updated 2026-07-23.
 
 🟢 active = starred or <14 days old, rotates freely · 💤 dormant = revisited monthly
 
 | Repo | Created | ⭐ | Gemini | Groq | Last touched | Tier |
 |---|---|---|---|---|---|---|
+| [llms-consume-excessive-tokens-before-processing-prompts-2026-07-14](https://github.com/sathiya-22/llms-consume-excessive-tokens-before-processing-prompts-2026-07-14) | 2026-07-14 | 1 | 1 | 1 | 2026-07-22 | 🟢 active |
 | [structured-output-validator-with-auto-retry-2026-07-07](https://github.com/sathiya-22/structured-output-validator-with-auto-retry-2026-07-07) | 2026-07-07 | 0 | 1 | 1 | 2026-07-15 | 💤 dormant |
 | [difficulty-integrating-llms-with-existing-tools-and-data-2026-07-07](https://github.com/sathiya-22/difficulty-integrating-llms-with-existing-tools-and-data-2026-07-07) | 2026-07-07 | 0 | 1 | 1 | 2026-07-15 | 💤 dormant |
-| [lack-of-local-first-llm-desktop-alternatives-2026-07-08](https://github.com/sathiya-22/lack-of-local-first-llm-desktop-alternatives-2026-07-08) | 2026-07-08 | 0 | 1 | 1 | 2026-07-16 | 🟢 active |
-| [ai-agents-struggle-with-microsoft-office-files-2026-07-08](https://github.com/sathiya-22/ai-agents-struggle-with-microsoft-office-files-2026-07-08) | 2026-07-08 | 0 | 1 | 1 | 2026-07-17 | 🟢 active |
+| [lack-of-local-first-llm-desktop-alternatives-2026-07-08](https://github.com/sathiya-22/lack-of-local-first-llm-desktop-alternatives-2026-07-08) | 2026-07-08 | 0 | 1 | 1 | 2026-07-16 | 💤 dormant |
+| [ai-agents-struggle-with-microsoft-office-files-2026-07-08](https://github.com/sathiya-22/ai-agents-struggle-with-microsoft-office-files-2026-07-08) | 2026-07-08 | 0 | 1 | 1 | 2026-07-17 | 💤 dormant |
 | [lack-of-robust-tools-for-ai-agents-to-interact-with-office-files-2026-07-09](https://github.com/sathiya-22/lack-of-robust-tools-for-ai-agents-to-interact-with-office-files-2026-07-09) | 2026-07-09 | 0 | 1 | 1 | 2026-07-18 | 🟢 active |
 | [running-llms-on-resource-constrained-hardware-2026-07-10](https://github.com/sathiya-22/running-llms-on-resource-constrained-hardware-2026-07-10) | 2026-07-10 | 0 | 1 | 1 | 2026-07-19 | 🟢 active |
 | [need-for-better-ai-agent-orchestration-and-management-2026-07-11](https://github.com/sathiya-22/need-for-better-ai-agent-orchestration-and-management-2026-07-11) | 2026-07-11 | 0 | 1 | 1 | 2026-07-20 | 🟢 active |
 | [llm-over-recommendation-and-alienation-2026-07-12](https://github.com/sathiya-22/llm-over-recommendation-and-alienation-2026-07-12) | 2026-07-12 | 0 | 1 | 1 | 2026-07-21 | 🟢 active |
 | [unpredictable-and-rising-llm-operational-costs-2026-07-13](https://github.com/sathiya-22/unpredictable-and-rising-llm-operational-costs-2026-07-13) | 2026-07-13 | 0 | 1 | 1 | 2026-07-21 | 🟢 active |
-| [llms-consume-excessive-tokens-before-processing-prompts-2026-07-14](https://github.com/sathiya-22/llms-consume-excessive-tokens-before-processing-prompts-2026-07-14) | 2026-07-14 | 0 | 1 | 0 | 2026-07-22 | 🟢 active |
-| [llms-process-excessive-tokens-before-prompt-2026-07-14](https://github.com/sathiya-22/llms-process-excessive-tokens-before-prompt-2026-07-14) | 2026-07-14 | 0 | 0 | 0 | — | 🟢 active |
+| [llms-process-excessive-tokens-before-prompt-2026-07-14](https://github.com/sathiya-22/llms-process-excessive-tokens-before-prompt-2026-07-14) | 2026-07-14 | 0 | 1 | 0 | 2026-07-23 | 🟢 active |
 | [challenges-in-agent-memory-persistence-and-state-management-2026-07-14](https://github.com/sathiya-22/challenges-in-agent-memory-persistence-and-state-management-2026-07-14) | 2026-07-14 | 0 | 0 | 0 | — | 🟢 active |
 | [high-cost-and-slow-performance-of-ai-agents-2026-07-15](https://github.com/sathiya-22/high-cost-and-slow-performance-of-ai-agents-2026-07-15) | 2026-07-15 | 0 | 0 | 0 | — | 🟢 active |
 | [deployment-and-operational-challenges-2026-07-16](https://github.com/sathiya-22/deployment-and-operational-challenges-2026-07-16) | 2026-07-16 | 0 | 0 | 0 | — | 🟢 active |
@@ -27,3 +27,4 @@ Auto-generated daily — 21 repos, 10 Gemini maturation passes, 9 Groq advanceme
 | [inconsistent-tool-calling-and-function-schema-handling-2026-07-20](https://github.com/sathiya-22/inconsistent-tool-calling-and-function-schema-handling-2026-07-20) | 2026-07-20 | 0 | 0 | 0 | — | 🟢 active |
 | [api-inconsistencies-and-integration-hurdles-2026-07-21](https://github.com/sathiya-22/api-inconsistencies-and-integration-hurdles-2026-07-21) | 2026-07-21 | 0 | 0 | 0 | — | 🟢 active |
 | [lack-of-robust-multi-agent-coordination-and-communication-2026-07-22](https://github.com/sathiya-22/lack-of-robust-multi-agent-coordination-and-communication-2026-07-22) | 2026-07-22 | 0 | 0 | 0 | — | 🟢 active |
+| [inconsistent-tool-calling-and-api-compatibility-across-llms-2026-07-23](https://github.com/sathiya-22/inconsistent-tool-calling-and-api-compatibility-across-llms-2026-07-23) | 2026-07-23 | 0 | 0 | 0 | — | 🟢 active |
