@@ -7,6 +7,7 @@ generated code in a sandbox (that's the point of the module under test).
 Run: python3 -m unittest discover tests -v
 """
 
+import json
 import sys
 import unittest
 import unittest.mock
@@ -15,6 +16,9 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent / "scripts"))
 
 import mature_repo  # noqa: E402 — imported as a module so call_gemini can be patched
+from eval_harness import (append_score_log, freeze_eval_files,  # noqa: E402
+                          is_regression, judge_score, parse_harness_proposal,
+                          run_eval)
 from generate_prototype import derive_topics  # noqa: E402
 from mature_repo import commit_summary, pick_due_repo, sanitize_log  # noqa: E402
 from research import (extract_result, parse_research_proposal,  # noqa: E402
@@ -324,6 +328,79 @@ class TestRunResearchStage(unittest.TestCase):
             {"main.py": "print('hi')\n"}, "", "2026-07-27", 1)
         self.assertEqual(extra_files, {})
         self.assertIn("unverified", entry_text)
+
+
+class TestEvalHarnessParsing(unittest.TestCase):
+    def test_valid_proposal_parsed(self):
+        raw = ("=== eval/dataset.json ===\n[{\"input\": 1}]\n"
+              "=== eval/run_eval.py ===\nprint('AUTOSCOUT_EVAL_SCORE: {\"score\": 1.0}')\n")
+        parsed = parse_harness_proposal(raw)
+        self.assertIn("eval/dataset.json", parsed)
+        self.assertIn("eval/run_eval.py", parsed)
+
+    def test_missing_script_rejected(self):
+        raw = "=== eval/dataset.json ===\n[]\n"
+        self.assertIsNone(parse_harness_proposal(raw))
+
+    def test_path_traversal_rejected(self):
+        raw = ("=== eval/dataset.json ===\n[]\n"
+              "=== eval/../../evil.py ===\nprint('hi')\n")
+        parsed = parse_harness_proposal(raw)
+        self.assertIsNone(parsed)
+
+
+class TestFreezeEvalFiles(unittest.TestCase):
+    def test_pre_existing_eval_files_stripped(self):
+        original = {"eval/dataset.json": "[]", "eval/run_eval.py": "old"}
+        edited = {"eval/run_eval.py": "model tried to rewrite this",
+                 "main.py": "print(1)"}
+        result = freeze_eval_files(edited, original)
+        self.assertNotIn("eval/run_eval.py", result)
+        self.assertIn("main.py", result)
+
+    def test_newly_created_eval_files_not_stripped(self):
+        # not in `original` (didn't exist before this cycle) — allowed through
+        edited = {"eval/run_eval.py": "brand new"}
+        result = freeze_eval_files(edited, {})
+        self.assertIn("eval/run_eval.py", result)
+
+
+class TestIsRegression(unittest.TestCase):
+    def test_lower_after_is_regression(self):
+        self.assertTrue(is_regression({"score": 5.0}, {"score": 3.0}))
+
+    def test_equal_or_higher_is_not_regression(self):
+        self.assertFalse(is_regression({"score": 5.0}, {"score": 5.0}))
+        self.assertFalse(is_regression({"score": 5.0}, {"score": 9.0}))
+
+    def test_missing_score_is_inconclusive_not_regression(self):
+        self.assertFalse(is_regression(None, {"score": 1.0}))
+        self.assertFalse(is_regression({"score": 5.0}, None))
+
+
+class TestJudgeScore(unittest.TestCase):
+    def test_parses_json_from_model_response(self):
+        call_llm = unittest.mock.Mock(
+            return_value='{"quality_score": 8, "reasoning": "solid improvement"}')
+        result = judge_score(call_llm, "fake-key", "diff", {"score": 1}, {"score": 2})
+        self.assertEqual(result["quality_score"], 8)
+
+    def test_unparseable_response_returns_none(self):
+        call_llm = unittest.mock.Mock(return_value="not json at all")
+        self.assertIsNone(judge_score(call_llm, "fake-key", "diff", {"score": 1}, {"score": 2}))
+
+
+class TestAppendScoreLog(unittest.TestCase):
+    def test_appends_valid_json_line(self):
+        log = append_score_log("", "2026-07-27", 1, {"score": 3.0}, {"quality_score": 7})
+        entry = json.loads(log.strip())
+        self.assertEqual(entry["iteration"], 1)
+        self.assertEqual(entry["score"]["score"], 3.0)
+
+
+class TestRunEvalNoScript(unittest.TestCase):
+    def test_missing_script_returns_none(self):
+        self.assertIsNone(run_eval({"main.py": "print(1)"}))
 
 
 if __name__ == "__main__":
