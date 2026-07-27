@@ -17,6 +17,8 @@ sys.path.insert(0, str(Path(__file__).parent.parent / "scripts"))
 import mature_repo  # noqa: E402 — imported as a module so call_gemini can be patched
 from generate_prototype import derive_topics  # noqa: E402
 from mature_repo import commit_summary, pick_due_repo, sanitize_log  # noqa: E402
+from research import (extract_result, parse_research_proposal,  # noqa: E402
+                      run_research_stage, sanitize_interpretation)
 from scout_common import (broken_python_files, parse_json_lenient,  # noqa: E402
                           parse_sections, slugify)
 from scout_problems import find_near_duplicate  # noqa: E402
@@ -229,6 +231,99 @@ class TestVerifyWithRetries(unittest.TestCase):
             verified, reason = mature_repo.verify_with_retries("fake-key", base, edited)
         self.assertIsNone(verified)
         self.assertIn("ImportError", reason)
+
+
+class TestResearchProposalParsing(unittest.TestCase):
+    def test_benchmark_proposal_parsed(self):
+        raw = ("QUESTION: is list comprehension faster than a for-loop here?\n"
+              "TYPE: benchmark\n"
+              "=== research/loop_bench.py ===\n"
+              "print('AUTOSCOUT_RESEARCH_RESULT: {\"a\": 1}')\n")
+        parsed = parse_research_proposal(raw)
+        self.assertEqual(parsed["type"], "benchmark")
+        self.assertEqual(parsed["script_filename"], "research/loop_bench.py")
+        self.assertIn("AUTOSCOUT_RESEARCH_RESULT", parsed["script_content"])
+
+    def test_qualitative_proposal_parsed(self):
+        raw = "QUESTION: which library fits better?\nTYPE: qualitative\nNOTES: library X has more features.\n"
+        parsed = parse_research_proposal(raw)
+        self.assertEqual(parsed["type"], "qualitative")
+        self.assertIn("library X", parsed["notes"])
+
+    def test_missing_question_rejected(self):
+        self.assertIsNone(parse_research_proposal("TYPE: benchmark\n"))
+
+    def test_path_traversal_rejected(self):
+        raw = ("QUESTION: q\nTYPE: benchmark\n"
+              "=== research/../../evil.py ===\nprint('hi')\n")
+        self.assertIsNone(parse_research_proposal(raw))
+
+
+class TestExtractResult(unittest.TestCase):
+    def test_extracts_json_after_marker(self):
+        stdout = "some noise\nAUTOSCOUT_RESEARCH_RESULT: {\"ms\": 12.5}\nmore noise\n"
+        self.assertEqual(extract_result(stdout), {"ms": 12.5})
+
+    def test_no_marker_returns_none(self):
+        self.assertIsNone(extract_result("just some output\n"))
+
+    def test_malformed_json_returns_none(self):
+        self.assertIsNone(extract_result("AUTOSCOUT_RESEARCH_RESULT: not json\n"))
+
+
+class TestSanitizeInterpretation(unittest.TestCase):
+    def test_clean_interpretation_kept(self):
+        result = {"a_ms": 12.5, "b_ms": 31.0}
+        text = "Approach A at 12.5ms beats approach B at 31.0ms — adopt A."
+        self.assertEqual(sanitize_interpretation(text, result, "q"), text)
+
+    def test_fabricated_number_discarded(self):
+        result = {"a_ms": 12.5, "b_ms": 31.0}
+        text = "This is a 47% improvement, clearly worth adopting."
+        out = sanitize_interpretation(text, result, "q")
+        self.assertIn("discarded", out)
+
+    def test_number_from_question_allowed(self):
+        result = {"speedup": 2.0}
+        text = "Comparing across 5 runs confirms a speedup of 2.0x."
+        # "5" appears in the question, "2.0" appears in the result — nothing foreign.
+        self.assertEqual(
+            sanitize_interpretation(text, result, "average of 5 runs"), text)
+
+
+class TestRunResearchStage(unittest.TestCase):
+    def test_benchmark_success_produces_entry_and_script_file(self):
+        proposal_raw = ("QUESTION: is A faster than B?\nTYPE: benchmark\n"
+                        "=== research/bench.py ===\n"
+                        "print('AUTOSCOUT_RESEARCH_RESULT: {\"a_ms\": 1.0, \"b_ms\": 2.0}')\n")
+        interp_raw = "A at 1.0ms beats B at 2.0ms — adopt A."
+        calls = iter([proposal_raw, interp_raw])
+        call_llm = unittest.mock.Mock(side_effect=lambda *a, **k: next(calls))
+
+        extra_files, entry_text = run_research_stage(
+            call_llm, "fake-key", {"full_name": "x/y", "name": "y", "topic": "t", "iterations": 0},
+            {"main.py": "print('hi')\n"}, "", "2026-07-27", 1)
+
+        self.assertIn("research/bench.py", extra_files)
+        self.assertIn("Measured result", entry_text)
+        self.assertIn("adopt A", entry_text)
+
+    def test_no_proposal_yields_nothing(self):
+        call_llm = unittest.mock.Mock(return_value="garbage, no fields")
+        extra_files, entry_text = run_research_stage(
+            call_llm, "fake-key", {"full_name": "x/y", "name": "y", "topic": "t", "iterations": 0},
+            {"main.py": "print('hi')\n"}, "", "2026-07-27", 1)
+        self.assertEqual(extra_files, {})
+        self.assertEqual(entry_text, "")
+
+    def test_qualitative_proposal_logged_as_unverified(self):
+        call_llm = unittest.mock.Mock(
+            return_value="QUESTION: which lib?\nTYPE: qualitative\nNOTES: lib X seems richer.\n")
+        extra_files, entry_text = run_research_stage(
+            call_llm, "fake-key", {"full_name": "x/y", "name": "y", "topic": "t", "iterations": 0},
+            {"main.py": "print('hi')\n"}, "", "2026-07-27", 1)
+        self.assertEqual(extra_files, {})
+        self.assertIn("unverified", entry_text)
 
 
 if __name__ == "__main__":
