@@ -34,6 +34,8 @@ import urllib.request
 from datetime import date
 from pathlib import Path
 
+import eval_harness
+import groq_research_client
 from digest import update_section
 from repo_registry import load_registry, save_registry, sync_registry
 from research import RESEARCH_LOG, run_research_stage
@@ -342,6 +344,11 @@ def main() -> None:
         print("ERROR: SCOUT_PAT is not set.", file=sys.stderr)
         sys.exit(1)
 
+    # Dedicated to the research stage + eval-harness judge calls, isolated
+    # from the main Gemini maturation budget above. Optional — both stages
+    # are simply skipped if this isn't configured yet.
+    research_key = os.environ.get("GROQ_RESEARCH_API_KEY", "")
+
     print("─── AutoScout: per-repo maturation ───")
     owner = get_authenticated_user(gh_token)
     registry = sync_registry(owner, gh_token)
@@ -364,7 +371,23 @@ def main() -> None:
         save_registry(registry)
         return
 
+    original_files = files  # pre-cycle snapshot — the freeze-check baseline
     old_growth_log = files.get(GROWTH_LOG, "")
+
+    before_score = None
+    harness_files: dict[str, str] = {}
+    if research_key and eval_harness.EVAL_SCRIPT not in files:
+        harness_files = eval_harness.propose_eval_harness(
+            groq_research_client.call_groq, research_key, entry, files) or {}
+        if harness_files:
+            files = {**files, **harness_files}
+            before_score = eval_harness.run_eval(files)
+            print(f"  eval harness: created ({eval_harness.EVAL_DATASET}, "
+                 f"{eval_harness.EVAL_SCRIPT}) — baseline score {before_score}")
+    elif eval_harness.EVAL_SCRIPT in files:
+        before_score = eval_harness.run_eval(files)
+        print(f"  eval harness: baseline score {before_score}")
+
     prompt = build_prompt(entry, files)
 
     try:
@@ -380,6 +403,7 @@ def main() -> None:
              file=sys.stderr)
         print(raw[:1000], file=sys.stderr)
         sys.exit(1)
+    edited = eval_harness.freeze_eval_files(edited, original_files)
 
     verified, reason = verify_with_retries(gemini_key, files, edited)
     if verified is None:
@@ -389,6 +413,13 @@ def main() -> None:
              f"({reason}) — aborting this iteration without pushing.", file=sys.stderr)
         sys.exit(1)
     edited = verified
+    edited.update(harness_files)  # always push a newly-created harness this cycle
+
+    after_score = eval_harness.run_eval({**files, **edited}) if before_score is not None else None
+    if eval_harness.is_regression(before_score, after_score):
+        print(f"ERROR: eval score regressed ({before_score} -> {after_score}) — "
+             "aborting this iteration without pushing.", file=sys.stderr)
+        sys.exit(1)
 
     iteration = entry.get("iterations", 0) + 1
     today = date.today().isoformat()
@@ -405,15 +436,31 @@ def main() -> None:
     summary = commit_summary(old_growth_log, new_growth_log)
 
     old_research_log = files.get(RESEARCH_LOG, "")
-    research_files, research_entry = run_research_stage(
-        call_gemini, gemini_key, entry, {**files, **edited}, old_research_log,
-        today, iteration)
-    if research_entry:
-        edited[RESEARCH_LOG] = (old_research_log.rstrip("\n") + "\n\n" if old_research_log.strip()
-                                else "") + research_entry
-        edited.update(research_files)
-        summary += " + research"
-        print(f"  research  : {research_entry.splitlines()[1]}")
+    if research_key:
+        research_files, research_entry = run_research_stage(
+            groq_research_client.call_groq, research_key, entry, {**files, **edited},
+            old_research_log, today, iteration)
+        if research_entry:
+            edited[RESEARCH_LOG] = (old_research_log.rstrip("\n") + "\n\n"
+                                    if old_research_log.strip() else "") + research_entry
+            edited.update(research_files)
+            summary += " + research"
+            print(f"  research  : {research_entry.splitlines()[1]}")
+
+    if before_score is not None:
+        old_scores_log = files.get(eval_harness.EVAL_SCORES_LOG, "")
+        judge = None
+        if research_key:
+            diff_summary = "\n\n".join(
+                f"--- {p} ---\n{c[:800]}" for p, c in edited.items()
+                if p not in (eval_harness.EVAL_DATASET, eval_harness.EVAL_SCRIPT,
+                            eval_harness.EVAL_SCORES_LOG))
+            judge = eval_harness.judge_score(groq_research_client.call_groq, research_key,
+                                             diff_summary, before_score, after_score)
+        edited[eval_harness.EVAL_SCORES_LOG] = eval_harness.append_score_log(
+            old_scores_log, today, iteration, after_score, judge)
+        summary += " + eval"
+        print(f"  eval score : {before_score} -> {after_score}  (judge: {judge})")
 
     try:
         push_maturation(full_name, edited, gh_token, iteration, summary)
