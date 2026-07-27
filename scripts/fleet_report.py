@@ -56,7 +56,7 @@ def render(lab: list[dict], engine: dict[str, dict]) -> str:
         f"{total_gemini} Gemini maturation passes, "
         f"{total_groq} Groq advancement passes. "
         f"Last updated {today.isoformat()}.\n\n"
-        f"🟢 active = starred or <14 days old, rotates freely · "
+        f"🟢 active = starred or <30 days old, rotates freely · "
         f"💤 dormant = revisited monthly\n\n"
         f"| Repo | Created | ⭐ | Gemini | Groq | Last touched | Tier |\n"
         f"|---|---|---|---|---|---|---|\n"

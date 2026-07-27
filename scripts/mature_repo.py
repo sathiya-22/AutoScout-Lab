@@ -36,6 +36,7 @@ from pathlib import Path
 
 from digest import update_section
 from repo_registry import load_registry, save_registry, sync_registry
+from research import RESEARCH_LOG, run_research_stage
 from scout_common import broken_python_files, call_gemini, parse_sections
 from verify import verify_python_repo
 
@@ -126,8 +127,10 @@ def fetch_repo_context(full_name: str, token: str) -> dict[str, str] | None:
 
 # ── Rotation ─────────────────────────────────────────────────────────────────
 
-ACTIVE_AGE_DAYS = 14    # new repos stay in the active tier this long
-DORMANT_REVISIT_DAYS = 30  # untouched dormant repos become due after this
+ACTIVE_AGE_DAYS = 30    # new repos stay in the active tier this long — raised
+                        # from 14 so each repo gets more real-research passes
+                        # before demotion, without slowing daily new-repo creation
+DORMANT_REVISIT_DAYS = 45  # untouched dormant repos become due after this
 
 
 def is_active(entry: dict, today: date | None = None) -> bool:
@@ -400,6 +403,17 @@ def main() -> None:
     edited[GROWTH_LOG] = new_growth_log
 
     summary = commit_summary(old_growth_log, new_growth_log)
+
+    old_research_log = files.get(RESEARCH_LOG, "")
+    research_files, research_entry = run_research_stage(
+        call_gemini, gemini_key, entry, {**files, **edited}, old_research_log,
+        today, iteration)
+    if research_entry:
+        edited[RESEARCH_LOG] = (old_research_log.rstrip("\n") + "\n\n" if old_research_log.strip()
+                                else "") + research_entry
+        edited.update(research_files)
+        summary += " + research"
+        print(f"  research  : {research_entry.splitlines()[1]}")
 
     try:
         push_maturation(full_name, edited, gh_token, iteration, summary)
