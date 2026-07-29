@@ -26,7 +26,7 @@ from research import (extract_result, parse_research_proposal,  # noqa: E402
 from scout_common import (broken_python_files, parse_json_lenient,  # noqa: E402
                           parse_sections, slugify)
 from scout_problems import find_near_duplicate  # noqa: E402
-from verify import verify_python_repo  # noqa: E402
+from verify import _classify_failure, verify_python_repo  # noqa: E402
 
 
 class TestParseSections(unittest.TestCase):
@@ -201,6 +201,28 @@ class TestVerifyPythonRepo(unittest.TestCase):
 
     def test_interactive_input_eof_passes(self):
         self.assertTrue(verify_python_repo({"main.py": "input('prompt> ')\n"})["ok"])
+
+class TestClassifyFailureCliUsage(unittest.TestCase):
+    def test_rich_boxed_missing_command_is_benign(self):
+        # A Typer/Click CLI with >1 @app.command() exits 2 with a rich-styled
+        # box when run with zero args — the exact failure mode that caused a
+        # real maturation run to wrongly abort (see 2026-07-29 incident): the
+        # last line is just a box border, not a recognizable "SomeError:".
+        stderr = (
+            "Usage: main.py [OPTIONS] COMMAND [ARGS]...\n"
+            "Try 'main.py --help' for help.\n"
+            "╭─ Error ────────────────────────────────────────────\n"
+            "│ Missing command. │\n"
+            "╰────────────────────────────────────────────╯\n"
+        )
+        ok, reason = _classify_failure(stderr)
+        self.assertTrue(ok)
+        self.assertIn("subcommand", reason)
+
+    def test_real_structural_bug_still_flagged(self):
+        stderr = "Traceback (most recent call last):\nNameError: name 'x' is not defined\n"
+        ok, reason = _classify_failure(stderr)
+        self.assertFalse(ok)
 
 
 class TestVerifyWithRetries(unittest.TestCase):
