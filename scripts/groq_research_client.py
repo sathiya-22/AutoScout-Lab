@@ -24,6 +24,14 @@ RETRY_BASE_SEC = 20
 def _is_transient(err: str) -> bool:
     if any(x in err for x in ("404", "403", "401")):
         return False
+    # A 413 naming "tokens per minute" is a rolling-60s-window collision —
+    # multiple Groq calls (research propose/interpret, judge score, and
+    # AutoScout-Engine's own advancement call if this account shares an
+    # org) landing within the same window — not one oversized payload.
+    # A short wait clears it, same as a 429; see AutoScout-Engine's
+    # groq_common.py for the real incident this was found from.
+    if "413" in err and "tokens per minute" in err.lower():
+        return True
     keywords = ("429", "503", "rate limit", "overloaded", "unavailable", "retry")
     return any(k.lower() in err.lower() for k in keywords)
 

@@ -20,13 +20,16 @@ from eval_harness import (append_score_log, freeze_eval_files,  # noqa: E402
                           is_regression, judge_score, parse_harness_proposal,
                           run_eval)
 from generate_prototype import derive_topics  # noqa: E402
-from mature_repo import commit_summary, pick_due_repo, sanitize_log  # noqa: E402
-from research import (extract_result, parse_research_proposal,  # noqa: E402
-                      run_research_stage, sanitize_interpretation)
+from groq_research_client import _is_transient as _groq_research_is_transient  # noqa: E402
+from mature_repo import (build_prompt, commit_summary,  # noqa: E402
+                         pick_due_repo, sanitize_log)
+from research import (build_propose_prompt, extract_result,  # noqa: E402
+                      parse_research_proposal, run_research_stage,
+                      sanitize_interpretation)
 from scout_common import (broken_python_files, parse_json_lenient,  # noqa: E402
                           parse_sections, slugify)
 from scout_problems import find_near_duplicate  # noqa: E402
-from verify import verify_python_repo  # noqa: E402
+from verify import _classify_failure, verify_python_repo  # noqa: E402
 
 
 class TestParseSections(unittest.TestCase):
@@ -201,6 +204,28 @@ class TestVerifyPythonRepo(unittest.TestCase):
 
     def test_interactive_input_eof_passes(self):
         self.assertTrue(verify_python_repo({"main.py": "input('prompt> ')\n"})["ok"])
+
+class TestClassifyFailureCliUsage(unittest.TestCase):
+    def test_rich_boxed_missing_command_is_benign(self):
+        # A Typer/Click CLI with >1 @app.command() exits 2 with a rich-styled
+        # box when run with zero args — the exact failure mode that caused a
+        # real maturation run to wrongly abort (see 2026-07-29 incident): the
+        # last line is just a box border, not a recognizable "SomeError:".
+        stderr = (
+            "Usage: main.py [OPTIONS] COMMAND [ARGS]...\n"
+            "Try 'main.py --help' for help.\n"
+            "╭─ Error ────────────────────────────────────────────\n"
+            "│ Missing command. │\n"
+            "╰────────────────────────────────────────────╯\n"
+        )
+        ok, reason = _classify_failure(stderr)
+        self.assertTrue(ok)
+        self.assertIn("subcommand", reason)
+
+    def test_real_structural_bug_still_flagged(self):
+        stderr = "Traceback (most recent call last):\nNameError: name 'x' is not defined\n"
+        ok, reason = _classify_failure(stderr)
+        self.assertFalse(ok)
 
 
 class TestVerifyWithRetries(unittest.TestCase):
@@ -401,6 +426,50 @@ class TestAppendScoreLog(unittest.TestCase):
 class TestRunEvalNoScript(unittest.TestCase):
     def test_missing_script_returns_none(self):
         self.assertIsNone(run_eval({"main.py": "print(1)"}))
+
+
+class TestPromptDumpExcludesArtifacts(unittest.TestCase):
+    """Real incident (2026-07-29/30, AutoScout-Engine): research/eval
+    artifact files riding along in the main prompt's file dump pushed a
+    long-lived repo's advancement call over Groq's 12,000 TPM limit (413
+    Request too large). The fix applies here too, ahead of Gemini's much
+    larger budget ever hitting the same wall."""
+
+    entry = {"full_name": "x/y", "name": "y", "topic": "t", "iterations": 0}
+
+    def test_research_and_eval_files_excluded_from_dump(self):
+        files = {
+            "main.py": "print('core')",
+            "research/bench_1.py": "print('AUTOSCOUT_RESEARCH_RESULT: {}')",
+            "eval/dataset.json": "[]",
+            "eval/run_eval.py": "print('AUTOSCOUT_EVAL_SCORE: {}')",
+        }
+        prompt = build_prompt(self.entry, files)
+        self.assertIn("main.py", prompt)
+        self.assertNotIn("bench_1.py", prompt)
+        self.assertNotIn("run_eval.py", prompt)
+
+    def test_research_propose_prompt_also_excludes_artifacts(self):
+        files = {"main.py": "print('core')", "eval/run_eval.py": "print('x')"}
+        prompt = build_propose_prompt(self.entry, files, "")
+        self.assertIn("main.py", prompt)
+        self.assertNotIn("run_eval.py", prompt)
+
+
+class TestGroqResearchClientIsTransientTpmCollision(unittest.TestCase):
+    """Same fix as AutoScout-Engine's groq_common.py — see that repo's
+    2026-07-29/30/31 incident. Applied here too since research.py's
+    propose/interpret calls and eval_harness.py's judge_score call all go
+    through this same client and can collide in the same way."""
+
+    def test_tpm_413_is_transient(self):
+        err = ('413 {"error":{"message":"Request too large ... on tokens '
+              'per minute (TPM): Limit 12000, Requested 12500"}}')
+        self.assertTrue(_groq_research_is_transient(err))
+
+    def test_unrelated_413_not_transient(self):
+        self.assertFalse(_groq_research_is_transient(
+            '413 {"error":{"message":"Payload too large"}}'))
 
 
 if __name__ == "__main__":

@@ -225,12 +225,23 @@ No markdown fences inside any file's content.
 """
 
 
+PROMPT_DUMP_EXCLUDE_PREFIXES = ("research/", "eval/")
+
+
 def build_prompt(entry: dict, files: dict[str, str]) -> str:
     growth_log = files.get(GROWTH_LOG,
                            "(none yet — this is truly the first maturation cycle; "
                            "do not invent any earlier entries.)")
+    # research.py's benchmark scripts and eval_harness.py's frozen harness
+    # are read separately by those modules directly — they don't need to
+    # also ride along in this prompt's own dump. Gemini's budget here is
+    # much larger than Groq's, but a repo with enough accumulated cycles
+    # could still hit it eventually (see AutoScout-Engine's 2026-07-29/30
+    # incident on the same underlying pattern, hit there first only
+    # because its TPM limit is far smaller).
     dump = "\n\n".join(f"----- FILE: {path} -----\n{content}"
-                       for path, content in files.items())
+                       for path, content in files.items()
+                       if not path.startswith(PROMPT_DUMP_EXCLUDE_PREFIXES))
     return MATURE_TEMPLATE.format(
         full_name=entry["full_name"],
         topic=entry.get("topic", entry["name"]),
