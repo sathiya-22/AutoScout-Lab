@@ -20,6 +20,7 @@ from eval_harness import (append_score_log, freeze_eval_files,  # noqa: E402
                           is_regression, judge_score, parse_harness_proposal,
                           run_eval)
 from generate_prototype import derive_topics  # noqa: E402
+from groq_research_client import _is_transient as _groq_research_is_transient  # noqa: E402
 from mature_repo import (build_prompt, commit_summary,  # noqa: E402
                          pick_due_repo, sanitize_log)
 from research import (build_propose_prompt, extract_result,  # noqa: E402
@@ -453,6 +454,22 @@ class TestPromptDumpExcludesArtifacts(unittest.TestCase):
         prompt = build_propose_prompt(self.entry, files, "")
         self.assertIn("main.py", prompt)
         self.assertNotIn("run_eval.py", prompt)
+
+
+class TestGroqResearchClientIsTransientTpmCollision(unittest.TestCase):
+    """Same fix as AutoScout-Engine's groq_common.py — see that repo's
+    2026-07-29/30/31 incident. Applied here too since research.py's
+    propose/interpret calls and eval_harness.py's judge_score call all go
+    through this same client and can collide in the same way."""
+
+    def test_tpm_413_is_transient(self):
+        err = ('413 {"error":{"message":"Request too large ... on tokens '
+              'per minute (TPM): Limit 12000, Requested 12500"}}')
+        self.assertTrue(_groq_research_is_transient(err))
+
+    def test_unrelated_413_not_transient(self):
+        self.assertFalse(_groq_research_is_transient(
+            '413 {"error":{"message":"Payload too large"}}'))
 
 
 if __name__ == "__main__":
