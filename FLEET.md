@@ -1,6 +1,6 @@
 # AutoScout Fleet
 
-Auto-generated daily — 32 repos, 17 Gemini maturation passes, 16 Groq advancement passes. Last updated 2026-08-01.
+Auto-generated daily — 33 repos, 18 Gemini maturation passes, 16 Groq advancement passes. Last updated 2026-08-02.
 
 🟢 active = starred or <30 days old, rotates freely · 💤 dormant = revisited monthly
 
@@ -23,7 +23,7 @@ Auto-generated daily — 32 repos, 17 Gemini maturation passes, 16 Groq advancem
 | [agent-memory-persistence-and-state-management-issues-2026-07-17](https://github.com/sathiya-22/agent-memory-persistence-and-state-management-issues-2026-07-17) | 2026-07-17 | 0 | 1 | 1 | 2026-07-27 | 🟢 active |
 | [agent-memory-and-state-persistence-challenges-2026-07-18](https://github.com/sathiya-22/agent-memory-and-state-persistence-challenges-2026-07-18) | 2026-07-18 | 0 | 1 | 1 | 2026-07-28 | 🟢 active |
 | [inconsistent-tool-calling-and-api-compatibility-2026-07-19](https://github.com/sathiya-22/inconsistent-tool-calling-and-api-compatibility-2026-07-19) | 2026-07-19 | 0 | 1 | 0 | 2026-08-01 | 🟢 active |
-| [inconsistent-tool-calling-and-schema-generation-2026-07-19](https://github.com/sathiya-22/inconsistent-tool-calling-and-schema-generation-2026-07-19) | 2026-07-19 | 0 | 0 | 0 | — | 🟢 active |
+| [inconsistent-tool-calling-and-schema-generation-2026-07-19](https://github.com/sathiya-22/inconsistent-tool-calling-and-schema-generation-2026-07-19) | 2026-07-19 | 0 | 1 | 0 | 2026-08-02 | 🟢 active |
 | [inconsistent-tool-calling-and-function-schema-handling-2026-07-20](https://github.com/sathiya-22/inconsistent-tool-calling-and-function-schema-handling-2026-07-20) | 2026-07-20 | 0 | 0 | 0 | — | 🟢 active |
 | [api-inconsistencies-and-integration-hurdles-2026-07-21](https://github.com/sathiya-22/api-inconsistencies-and-integration-hurdles-2026-07-21) | 2026-07-21 | 0 | 0 | 0 | — | 🟢 active |
 | [lack-of-robust-multi-agent-coordination-and-communication-2026-07-22](https://github.com/sathiya-22/lack-of-robust-multi-agent-coordination-and-communication-2026-07-22) | 2026-07-22 | 0 | 0 | 0 | — | 🟢 active |
@@ -38,3 +38,4 @@ Auto-generated daily — 32 repos, 17 Gemini maturation passes, 16 Groq advancem
 | [dynamic-tool-management-and-protocol-standardization-2026-07-30](https://github.com/sathiya-22/dynamic-tool-management-and-protocol-standardization-2026-07-30) | 2026-07-30 | 0 | 0 | 0 | — | 🟢 active |
 | [interoperability-and-compatibility-across-llm-providers-and-frameworks-2026-07-31](https://github.com/sathiya-22/interoperability-and-compatibility-across-llm-providers-and-frameworks-2026-07-31) | 2026-07-31 | 0 | 0 | 0 | — | 🟢 active |
 | [reliable-state-persistence-and-checkpointing-in-agent-orchestration-2026-08-01](https://github.com/sathiya-22/reliable-state-persistence-and-checkpointing-in-agent-orchestration-2026-08-01) | 2026-08-01 | 0 | 0 | 0 | — | 🟢 active |
+| [agent-ops-and-deployment-complexity-2026-08-02](https://github.com/sathiya-22/agent-ops-and-deployment-complexity-2026-08-02) | 2026-08-02 | 0 | 0 | 0 | — | 🟢 active |
