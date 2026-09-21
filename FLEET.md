@@ -1,6 +1,6 @@
 # AutoScout Fleet
 
-Auto-generated daily — 79 repos, 20 Gemini maturation passes, 16 Groq advancement passes. Last updated 2026-09-20.
+Auto-generated daily — 80 repos, 21 Gemini maturation passes, 16 Groq advancement passes. Last updated 2026-09-21.
 
 🟢 active = starred or <30 days old, rotates freely · 💤 dormant = revisited monthly
 
@@ -26,7 +26,7 @@ Auto-generated daily — 79 repos, 20 Gemini maturation passes, 16 Groq advancem
 | [inconsistent-tool-calling-and-schema-generation-2026-07-19](https://github.com/sathiya-22/inconsistent-tool-calling-and-schema-generation-2026-07-19) | 2026-07-19 | 0 | 1 | 0 | 2026-08-02 | 💤 dormant |
 | [inconsistent-tool-calling-and-function-schema-handling-2026-07-20](https://github.com/sathiya-22/inconsistent-tool-calling-and-function-schema-handling-2026-07-20) | 2026-07-20 | 0 | 1 | 0 | 2026-09-19 | 💤 dormant |
 | [api-inconsistencies-and-integration-hurdles-2026-07-21](https://github.com/sathiya-22/api-inconsistencies-and-integration-hurdles-2026-07-21) | 2026-07-21 | 0 | 1 | 0 | 2026-09-20 | 💤 dormant |
-| [lack-of-robust-multi-agent-coordination-and-communication-2026-07-22](https://github.com/sathiya-22/lack-of-robust-multi-agent-coordination-and-communication-2026-07-22) | 2026-07-22 | 0 | 0 | 0 | — | 💤 dormant |
+| [lack-of-robust-multi-agent-coordination-and-communication-2026-07-22](https://github.com/sathiya-22/lack-of-robust-multi-agent-coordination-and-communication-2026-07-22) | 2026-07-22 | 0 | 1 | 0 | 2026-09-21 | 💤 dormant |
 | [inconsistent-tool-calling-and-api-compatibility-across-llms-2026-07-23](https://github.com/sathiya-22/inconsistent-tool-calling-and-api-compatibility-across-llms-2026-07-23) | 2026-07-23 | 0 | 0 | 0 | — | 💤 dormant |
 | [reliable-memory-and-state-management-for-agents-2026-07-24](https://github.com/sathiya-22/reliable-memory-and-state-management-for-agents-2026-07-24) | 2026-07-24 | 0 | 0 | 0 | — | 💤 dormant |
 | [llm-agents-lack-advanced-reasoning-and-memory-2026-07-24](https://github.com/sathiya-22/llm-agents-lack-advanced-reasoning-and-memory-2026-07-24) | 2026-07-24 | 0 | 0 | 0 | — | 💤 dormant |
@@ -56,7 +56,7 @@ Auto-generated daily — 79 repos, 20 Gemini maturation passes, 16 Groq advancem
 | [ensuring-safety-and-security-of-ai-agents-2026-08-18](https://github.com/sathiya-22/ensuring-safety-and-security-of-ai-agents-2026-08-18) | 2026-08-18 | 0 | 0 | 0 | — | 💤 dormant |
 | [trusted-rpc-dependency-path-issues-2026-08-19](https://github.com/sathiya-22/trusted-rpc-dependency-path-issues-2026-08-19) | 2026-08-19 | 0 | 0 | 0 | — | 💤 dormant |
 | [automated-detection-of-agent-walking-dead-states-2026-08-20](https://github.com/sathiya-22/automated-detection-of-agent-walking-dead-states-2026-08-20) | 2026-08-20 | 0 | 0 | 0 | — | 💤 dormant |
-| [agentic-system-sandboxing-for-security-2026-08-21](https://github.com/sathiya-22/agentic-system-sandboxing-for-security-2026-08-21) | 2026-08-21 | 0 | 0 | 0 | — | 🟢 active |
+| [agentic-system-sandboxing-for-security-2026-08-21](https://github.com/sathiya-22/agentic-system-sandboxing-for-security-2026-08-21) | 2026-08-21 | 0 | 0 | 0 | — | 💤 dormant |
 | [persistent-reproducible-agent-execution-environments-2026-08-22](https://github.com/sathiya-22/persistent-reproducible-agent-execution-environments-2026-08-22) | 2026-08-22 | 0 | 0 | 0 | — | 🟢 active |
 | [inconsistent-state-persistence-and-streaming-in-agentic-systems-2026-08-23](https://github.com/sathiya-22/inconsistent-state-persistence-and-streaming-in-agentic-systems-2026-08-23) | 2026-08-23 | 0 | 0 | 0 | — | 🟢 active |
 | [server-initialization-and-shutdown-reliability-2026-08-24](https://github.com/sathiya-22/server-initialization-and-shutdown-reliability-2026-08-24) | 2026-08-24 | 0 | 0 | 0 | — | 🟢 active |
@@ -85,3 +85,4 @@ Auto-generated daily — 79 repos, 20 Gemini maturation passes, 16 Groq advancem
 | [agent-portability-across-frameworks-2026-09-18](https://github.com/sathiya-22/agent-portability-across-frameworks-2026-09-18) | 2026-09-18 | 0 | 0 | 0 | — | 🟢 active |
 | [inconsistent-error-handling-for-tool-calls-2026-09-19](https://github.com/sathiya-22/inconsistent-error-handling-for-tool-calls-2026-09-19) | 2026-09-19 | 0 | 0 | 0 | — | 🟢 active |
 | [filesystem-server-access-and-permissions-issues-2026-09-20](https://github.com/sathiya-22/filesystem-server-access-and-permissions-issues-2026-09-20) | 2026-09-20 | 0 | 0 | 0 | — | 🟢 active |
+| [lack-of-standardized-asynchronous-client-support-2026-09-21](https://github.com/sathiya-22/lack-of-standardized-asynchronous-client-support-2026-09-21) | 2026-09-21 | 0 | 0 | 0 | — | 🟢 active |
