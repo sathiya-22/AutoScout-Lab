@@ -1,6 +1,6 @@
 # AutoScout Fleet
 
-Auto-generated daily — 83 repos, 24 Gemini maturation passes, 16 Groq advancement passes. Last updated 2026-09-24.
+Auto-generated daily — 85 repos, 25 Gemini maturation passes, 16 Groq advancement passes. Last updated 2026-09-26.
 
 🟢 active = starred or <30 days old, rotates freely · 💤 dormant = revisited monthly
 
@@ -30,7 +30,7 @@ Auto-generated daily — 83 repos, 24 Gemini maturation passes, 16 Groq advancem
 | [inconsistent-tool-calling-and-api-compatibility-across-llms-2026-07-23](https://github.com/sathiya-22/inconsistent-tool-calling-and-api-compatibility-across-llms-2026-07-23) | 2026-07-23 | 0 | 1 | 0 | 2026-09-22 | 💤 dormant |
 | [reliable-memory-and-state-management-for-agents-2026-07-24](https://github.com/sathiya-22/reliable-memory-and-state-management-for-agents-2026-07-24) | 2026-07-24 | 0 | 1 | 0 | 2026-09-23 | 💤 dormant |
 | [llm-agents-lack-advanced-reasoning-and-memory-2026-07-24](https://github.com/sathiya-22/llm-agents-lack-advanced-reasoning-and-memory-2026-07-24) | 2026-07-24 | 0 | 1 | 0 | 2026-09-24 | 💤 dormant |
-| [observability-and-debugging-challenges-in-agent-workflows-2026-07-25](https://github.com/sathiya-22/observability-and-debugging-challenges-in-agent-workflows-2026-07-25) | 2026-07-25 | 0 | 0 | 0 | — | 💤 dormant |
+| [observability-and-debugging-challenges-in-agent-workflows-2026-07-25](https://github.com/sathiya-22/observability-and-debugging-challenges-in-agent-workflows-2026-07-25) | 2026-07-25 | 0 | 1 | 0 | 2026-09-26 | 💤 dormant |
 | [reliable-state-persistence-and-checkpointing-2026-07-26](https://github.com/sathiya-22/reliable-state-persistence-and-checkpointing-2026-07-26) | 2026-07-26 | 0 | 0 | 0 | — | 💤 dormant |
 | [unreliable-tool-dispatch-in-mcp-2026-07-27](https://github.com/sathiya-22/unreliable-tool-dispatch-in-mcp-2026-07-27) | 2026-07-27 | 0 | 0 | 0 | — | 💤 dormant |
 | [observability-and-evaluation-for-agentic-systems-2026-07-28](https://github.com/sathiya-22/observability-and-evaluation-for-agentic-systems-2026-07-28) | 2026-07-28 | 0 | 0 | 0 | — | 💤 dormant |
@@ -60,8 +60,8 @@ Auto-generated daily — 83 repos, 24 Gemini maturation passes, 16 Groq advancem
 | [persistent-reproducible-agent-execution-environments-2026-08-22](https://github.com/sathiya-22/persistent-reproducible-agent-execution-environments-2026-08-22) | 2026-08-22 | 0 | 0 | 0 | — | 💤 dormant |
 | [inconsistent-state-persistence-and-streaming-in-agentic-systems-2026-08-23](https://github.com/sathiya-22/inconsistent-state-persistence-and-streaming-in-agentic-systems-2026-08-23) | 2026-08-23 | 0 | 0 | 0 | — | 💤 dormant |
 | [server-initialization-and-shutdown-reliability-2026-08-24](https://github.com/sathiya-22/server-initialization-and-shutdown-reliability-2026-08-24) | 2026-08-24 | 0 | 0 | 0 | — | 💤 dormant |
-| [unreliable-server-initialization-and-shutdown-2026-08-25](https://github.com/sathiya-22/unreliable-server-initialization-and-shutdown-2026-08-25) | 2026-08-25 | 0 | 0 | 0 | — | 🟢 active |
-| [agent-memory-and-context-management-challenges-2026-08-26](https://github.com/sathiya-22/agent-memory-and-context-management-challenges-2026-08-26) | 2026-08-26 | 0 | 0 | 0 | — | 🟢 active |
+| [unreliable-server-initialization-and-shutdown-2026-08-25](https://github.com/sathiya-22/unreliable-server-initialization-and-shutdown-2026-08-25) | 2026-08-25 | 0 | 0 | 0 | — | 💤 dormant |
+| [agent-memory-and-context-management-challenges-2026-08-26](https://github.com/sathiya-22/agent-memory-and-context-management-challenges-2026-08-26) | 2026-08-26 | 0 | 0 | 0 | — | 💤 dormant |
 | [inconsistent-mcp-server-transport-errors-2026-08-27](https://github.com/sathiya-22/inconsistent-mcp-server-transport-errors-2026-08-27) | 2026-08-27 | 0 | 0 | 0 | — | 🟢 active |
 | [evaluating-agentic-ai-on-complex-workflows-2026-08-28](https://github.com/sathiya-22/evaluating-agentic-ai-on-complex-workflows-2026-08-28) | 2026-08-28 | 0 | 0 | 0 | — | 🟢 active |
 | [tool-orchestration-and-dynamic-tool-management-limitations-2026-08-29](https://github.com/sathiya-22/tool-orchestration-and-dynamic-tool-management-limitations-2026-08-29) | 2026-08-29 | 0 | 0 | 0 | — | 🟢 active |
@@ -89,3 +89,5 @@ Auto-generated daily — 83 repos, 24 Gemini maturation passes, 16 Groq advancem
 | [difficulty-sharing-and-managing-ai-skills-2026-09-22](https://github.com/sathiya-22/difficulty-sharing-and-managing-ai-skills-2026-09-22) | 2026-09-22 | 0 | 0 | 0 | — | 🟢 active |
 | [agent-intent-conflicts-in-parallel-execution-2026-09-23](https://github.com/sathiya-22/agent-intent-conflicts-in-parallel-execution-2026-09-23) | 2026-09-23 | 0 | 0 | 0 | — | 🟢 active |
 | [asynchronous-client-support-for-agent-frameworks-2026-09-24](https://github.com/sathiya-22/asynchronous-client-support-for-agent-frameworks-2026-09-24) | 2026-09-24 | 0 | 0 | 0 | — | 🟢 active |
+| [agent-state-loss-on-cancellation-2026-09-25](https://github.com/sathiya-22/agent-state-loss-on-cancellation-2026-09-25) | 2026-09-25 | 0 | 0 | 0 | — | 🟢 active |
+| [inconsistent-llm-api-batching-2026-09-26](https://github.com/sathiya-22/inconsistent-llm-api-batching-2026-09-26) | 2026-09-26 | 0 | 0 | 0 | — | 🟢 active |
