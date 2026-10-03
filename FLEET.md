@@ -1,6 +1,6 @@
 # AutoScout Fleet
 
-Auto-generated daily — 90 repos, 30 Gemini maturation passes, 16 Groq advancement passes. Last updated 2026-10-02.
+Auto-generated daily — 91 repos, 31 Gemini maturation passes, 16 Groq advancement passes. Last updated 2026-10-03.
 
 🟢 active = starred or <30 days old, rotates freely · 💤 dormant = revisited monthly
 
@@ -36,7 +36,7 @@ Auto-generated daily — 90 repos, 30 Gemini maturation passes, 16 Groq advancem
 | [observability-and-evaluation-for-agentic-systems-2026-07-28](https://github.com/sathiya-22/observability-and-evaluation-for-agentic-systems-2026-07-28) | 2026-07-28 | 0 | 1 | 0 | 2026-09-29 | 💤 dormant |
 | [managing-and-orchestrating-ai-agents-2026-07-29](https://github.com/sathiya-22/managing-and-orchestrating-ai-agents-2026-07-29) | 2026-07-29 | 0 | 1 | 0 | 2026-10-01 | 💤 dormant |
 | [dynamic-tool-management-and-protocol-standardization-2026-07-30](https://github.com/sathiya-22/dynamic-tool-management-and-protocol-standardization-2026-07-30) | 2026-07-30 | 0 | 1 | 0 | 2026-10-02 | 💤 dormant |
-| [interoperability-and-compatibility-across-llm-providers-and-frameworks-2026-07-31](https://github.com/sathiya-22/interoperability-and-compatibility-across-llm-providers-and-frameworks-2026-07-31) | 2026-07-31 | 0 | 0 | 0 | — | 💤 dormant |
+| [interoperability-and-compatibility-across-llm-providers-and-frameworks-2026-07-31](https://github.com/sathiya-22/interoperability-and-compatibility-across-llm-providers-and-frameworks-2026-07-31) | 2026-07-31 | 0 | 1 | 0 | 2026-10-03 | 💤 dormant |
 | [reliable-state-persistence-and-checkpointing-in-agent-orchestration-2026-08-01](https://github.com/sathiya-22/reliable-state-persistence-and-checkpointing-in-agent-orchestration-2026-08-01) | 2026-08-01 | 0 | 0 | 0 | — | 💤 dormant |
 | [agent-ops-and-deployment-complexity-2026-08-02](https://github.com/sathiya-22/agent-ops-and-deployment-complexity-2026-08-02) | 2026-08-02 | 0 | 0 | 0 | — | 💤 dormant |
 | [tool-calling-and-schema-generation-complexities-2026-08-03](https://github.com/sathiya-22/tool-calling-and-schema-generation-complexities-2026-08-03) | 2026-08-03 | 0 | 0 | 0 | — | 💤 dormant |
@@ -67,7 +67,7 @@ Auto-generated daily — 90 repos, 30 Gemini maturation passes, 16 Groq advancem
 | [tool-orchestration-and-dynamic-tool-management-limitations-2026-08-29](https://github.com/sathiya-22/tool-orchestration-and-dynamic-tool-management-limitations-2026-08-29) | 2026-08-29 | 0 | 0 | 0 | — | 💤 dormant |
 | [filesystem-server-access-and-functionality-issues-2026-08-30](https://github.com/sathiya-22/filesystem-server-access-and-functionality-issues-2026-08-30) | 2026-08-30 | 0 | 0 | 0 | — | 💤 dormant |
 | [agent-memory-as-a-file-format-2026-09-01](https://github.com/sathiya-22/agent-memory-as-a-file-format-2026-09-01) | 2026-09-01 | 0 | 0 | 0 | — | 💤 dormant |
-| [agentic-system-compatibility-and-interoperability-2026-09-02](https://github.com/sathiya-22/agentic-system-compatibility-and-interoperability-2026-09-02) | 2026-09-02 | 0 | 0 | 0 | — | 🟢 active |
+| [agentic-system-compatibility-and-interoperability-2026-09-02](https://github.com/sathiya-22/agentic-system-compatibility-and-interoperability-2026-09-02) | 2026-09-02 | 0 | 0 | 0 | — | 💤 dormant |
 | [lack-of-standardized-rl-environments-for-llms-2026-09-03](https://github.com/sathiya-22/lack-of-standardized-rl-environments-for-llms-2026-09-03) | 2026-09-03 | 0 | 0 | 0 | — | 🟢 active |
 | [observability-and-debugging-in-agent-workflows-2026-09-04](https://github.com/sathiya-22/observability-and-debugging-in-agent-workflows-2026-09-04) | 2026-09-04 | 0 | 0 | 0 | — | 🟢 active |
 | [reliability-issues-with-mcp-server-initialization-2026-09-05](https://github.com/sathiya-22/reliability-issues-with-mcp-server-initialization-2026-09-05) | 2026-09-05 | 0 | 0 | 0 | — | 🟢 active |
@@ -96,3 +96,4 @@ Auto-generated daily — 90 repos, 30 Gemini maturation passes, 16 Groq advancem
 | [mcp-server-filesystem-path-resolution-errors-2026-09-29](https://github.com/sathiya-22/mcp-server-filesystem-path-resolution-errors-2026-09-29) | 2026-09-29 | 0 | 0 | 0 | — | 🟢 active |
 | [intermittent-server-side-safety-classifier-failure-2026-09-30](https://github.com/sathiya-22/intermittent-server-side-safety-classifier-failure-2026-09-30) | 2026-09-30 | 0 | 0 | 0 | — | 🟢 active |
 | [observability-and-debugging-for-agentic-workflows-2026-10-01](https://github.com/sathiya-22/observability-and-debugging-for-agentic-workflows-2026-10-01) | 2026-10-01 | 0 | 0 | 0 | — | 🟢 active |
+| [lack-of-standardized-tool-execution-protocols-2026-10-03](https://github.com/sathiya-22/lack-of-standardized-tool-execution-protocols-2026-10-03) | 2026-10-03 | 0 | 0 | 0 | — | 🟢 active |
