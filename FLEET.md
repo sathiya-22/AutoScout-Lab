@@ -1,6 +1,6 @@
 # AutoScout Fleet
 
-Auto-generated daily — 93 repos, 34 Gemini maturation passes, 16 Groq advancement passes. Last updated 2026-10-06.
+Auto-generated daily — 94 repos, 35 Gemini maturation passes, 16 Groq advancement passes. Last updated 2026-10-07.
 
 🟢 active = starred or <30 days old, rotates freely · 💤 dormant = revisited monthly
 
@@ -40,7 +40,7 @@ Auto-generated daily — 93 repos, 34 Gemini maturation passes, 16 Groq advancem
 | [reliable-state-persistence-and-checkpointing-in-agent-orchestration-2026-08-01](https://github.com/sathiya-22/reliable-state-persistence-and-checkpointing-in-agent-orchestration-2026-08-01) | 2026-08-01 | 0 | 1 | 0 | 2026-10-04 | 💤 dormant |
 | [agent-ops-and-deployment-complexity-2026-08-02](https://github.com/sathiya-22/agent-ops-and-deployment-complexity-2026-08-02) | 2026-08-02 | 0 | 1 | 0 | 2026-10-05 | 💤 dormant |
 | [tool-calling-and-schema-generation-complexities-2026-08-03](https://github.com/sathiya-22/tool-calling-and-schema-generation-complexities-2026-08-03) | 2026-08-03 | 0 | 1 | 0 | 2026-10-06 | 💤 dormant |
-| [observability-and-debugging-for-agentic-systems-2026-08-04](https://github.com/sathiya-22/observability-and-debugging-for-agentic-systems-2026-08-04) | 2026-08-04 | 0 | 0 | 0 | — | 💤 dormant |
+| [observability-and-debugging-for-agentic-systems-2026-08-04](https://github.com/sathiya-22/observability-and-debugging-for-agentic-systems-2026-08-04) | 2026-08-04 | 0 | 1 | 0 | 2026-10-07 | 💤 dormant |
 | [agentic-system-debugging-in-production-2026-08-06](https://github.com/sathiya-22/agentic-system-debugging-in-production-2026-08-06) | 2026-08-06 | 0 | 0 | 0 | — | 💤 dormant |
 | [multi-agent-coordination-and-communication-gaps-2026-08-07](https://github.com/sathiya-22/multi-agent-coordination-and-communication-gaps-2026-08-07) | 2026-08-07 | 0 | 0 | 0 | — | 💤 dormant |
 | [need-for-better-web-data-cleaning-models-2026-08-08](https://github.com/sathiya-22/need-for-better-web-data-cleaning-models-2026-08-08) | 2026-08-08 | 0 | 0 | 0 | — | 💤 dormant |
@@ -71,7 +71,7 @@ Auto-generated daily — 93 repos, 34 Gemini maturation passes, 16 Groq advancem
 | [lack-of-standardized-rl-environments-for-llms-2026-09-03](https://github.com/sathiya-22/lack-of-standardized-rl-environments-for-llms-2026-09-03) | 2026-09-03 | 0 | 0 | 0 | — | 💤 dormant |
 | [observability-and-debugging-in-agent-workflows-2026-09-04](https://github.com/sathiya-22/observability-and-debugging-in-agent-workflows-2026-09-04) | 2026-09-04 | 0 | 0 | 0 | — | 💤 dormant |
 | [reliability-issues-with-mcp-server-initialization-2026-09-05](https://github.com/sathiya-22/reliability-issues-with-mcp-server-initialization-2026-09-05) | 2026-09-05 | 0 | 0 | 0 | — | 💤 dormant |
-| [agent-memory-for-ai-coding-agents-2026-09-06](https://github.com/sathiya-22/agent-memory-for-ai-coding-agents-2026-09-06) | 2026-09-06 | 0 | 0 | 0 | — | 🟢 active |
+| [agent-memory-for-ai-coding-agents-2026-09-06](https://github.com/sathiya-22/agent-memory-for-ai-coding-agents-2026-09-06) | 2026-09-06 | 0 | 0 | 0 | — | 💤 dormant |
 | [agent-memory-storage-path-ignored-2026-09-07](https://github.com/sathiya-22/agent-memory-storage-path-ignored-2026-09-07) | 2026-09-07 | 0 | 0 | 0 | — | 🟢 active |
 | [agent-server-initialization-and-startup-issues-2026-09-08](https://github.com/sathiya-22/agent-server-initialization-and-startup-issues-2026-09-08) | 2026-09-08 | 0 | 0 | 0 | — | 🟢 active |
 | [environment-variable-configuration-for-agent-memory-2026-09-09](https://github.com/sathiya-22/environment-variable-configuration-for-agent-memory-2026-09-09) | 2026-09-09 | 0 | 0 | 0 | — | 🟢 active |
@@ -99,3 +99,4 @@ Auto-generated daily — 93 repos, 34 Gemini maturation passes, 16 Groq advancem
 | [lack-of-standardized-tool-execution-protocols-2026-10-03](https://github.com/sathiya-22/lack-of-standardized-tool-execution-protocols-2026-10-03) | 2026-10-03 | 0 | 0 | 0 | — | 🟢 active |
 | [mcp-sse-server-receives-requests-before-initialization-2026-10-04](https://github.com/sathiya-22/mcp-sse-server-receives-requests-before-initialization-2026-10-04) | 2026-10-04 | 0 | 0 | 0 | — | 🟢 active |
 | [mcp-clientsession-error-handling-2026-10-06](https://github.com/sathiya-22/mcp-clientsession-error-handling-2026-10-06) | 2026-10-06 | 0 | 0 | 0 | — | 🟢 active |
+| [agent-server-initialization-race-conditions-2026-10-07](https://github.com/sathiya-22/agent-server-initialization-race-conditions-2026-10-07) | 2026-10-07 | 0 | 0 | 0 | — | 🟢 active |
