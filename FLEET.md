@@ -1,6 +1,6 @@
 # AutoScout Fleet
 
-Auto-generated daily — 96 repos, 37 Gemini maturation passes, 16 Groq advancement passes. Last updated 2026-10-09.
+Auto-generated daily — 97 repos, 38 Gemini maturation passes, 16 Groq advancement passes. Last updated 2026-10-10.
 
 🟢 active = starred or <30 days old, rotates freely · 💤 dormant = revisited monthly
 
@@ -43,7 +43,7 @@ Auto-generated daily — 96 repos, 37 Gemini maturation passes, 16 Groq advancem
 | [observability-and-debugging-for-agentic-systems-2026-08-04](https://github.com/sathiya-22/observability-and-debugging-for-agentic-systems-2026-08-04) | 2026-08-04 | 0 | 1 | 0 | 2026-10-07 | 💤 dormant |
 | [agentic-system-debugging-in-production-2026-08-06](https://github.com/sathiya-22/agentic-system-debugging-in-production-2026-08-06) | 2026-08-06 | 0 | 1 | 0 | 2026-10-08 | 💤 dormant |
 | [multi-agent-coordination-and-communication-gaps-2026-08-07](https://github.com/sathiya-22/multi-agent-coordination-and-communication-gaps-2026-08-07) | 2026-08-07 | 0 | 1 | 0 | 2026-10-09 | 💤 dormant |
-| [need-for-better-web-data-cleaning-models-2026-08-08](https://github.com/sathiya-22/need-for-better-web-data-cleaning-models-2026-08-08) | 2026-08-08 | 0 | 0 | 0 | — | 💤 dormant |
+| [need-for-better-web-data-cleaning-models-2026-08-08](https://github.com/sathiya-22/need-for-better-web-data-cleaning-models-2026-08-08) | 2026-08-08 | 0 | 1 | 0 | 2026-10-10 | 💤 dormant |
 | [challenges-in-cleaning-and-preparing-web-data-for-llms-2026-08-09](https://github.com/sathiya-22/challenges-in-cleaning-and-preparing-web-data-for-llms-2026-08-09) | 2026-08-09 | 0 | 0 | 0 | — | 💤 dormant |
 | [integrating-ai-agents-with-web-applications-2026-08-10](https://github.com/sathiya-22/integrating-ai-agents-with-web-applications-2026-08-10) | 2026-08-10 | 0 | 0 | 0 | — | 💤 dormant |
 | [interoperability-and-compatibility-across-llm-providers-and-apis-2026-08-11](https://github.com/sathiya-22/interoperability-and-compatibility-across-llm-providers-and-apis-2026-08-11) | 2026-08-11 | 0 | 0 | 0 | — | 💤 dormant |
@@ -74,7 +74,7 @@ Auto-generated daily — 96 repos, 37 Gemini maturation passes, 16 Groq advancem
 | [agent-memory-for-ai-coding-agents-2026-09-06](https://github.com/sathiya-22/agent-memory-for-ai-coding-agents-2026-09-06) | 2026-09-06 | 0 | 0 | 0 | — | 💤 dormant |
 | [agent-memory-storage-path-ignored-2026-09-07](https://github.com/sathiya-22/agent-memory-storage-path-ignored-2026-09-07) | 2026-09-07 | 0 | 0 | 0 | — | 💤 dormant |
 | [agent-server-initialization-and-startup-issues-2026-09-08](https://github.com/sathiya-22/agent-server-initialization-and-startup-issues-2026-09-08) | 2026-09-08 | 0 | 0 | 0 | — | 💤 dormant |
-| [environment-variable-configuration-for-agent-memory-2026-09-09](https://github.com/sathiya-22/environment-variable-configuration-for-agent-memory-2026-09-09) | 2026-09-09 | 0 | 0 | 0 | — | 🟢 active |
+| [environment-variable-configuration-for-agent-memory-2026-09-09](https://github.com/sathiya-22/environment-variable-configuration-for-agent-memory-2026-09-09) | 2026-09-09 | 0 | 0 | 0 | — | 💤 dormant |
 | [agent-memory-storage-configuration-issues-2026-09-11](https://github.com/sathiya-22/agent-memory-storage-configuration-issues-2026-09-11) | 2026-09-11 | 0 | 0 | 0 | — | 🟢 active |
 | [postgresql-checkpoint-ssl-errors-2026-09-12](https://github.com/sathiya-22/postgresql-checkpoint-ssl-errors-2026-09-12) | 2026-09-12 | 0 | 0 | 0 | — | 🟢 active |
 | [checkpoint-database-connection-issues-2026-09-13](https://github.com/sathiya-22/checkpoint-database-connection-issues-2026-09-13) | 2026-09-13 | 0 | 0 | 0 | — | 🟢 active |
@@ -102,3 +102,4 @@ Auto-generated daily — 96 repos, 37 Gemini maturation passes, 16 Groq advancem
 | [agent-server-initialization-race-conditions-2026-10-07](https://github.com/sathiya-22/agent-server-initialization-race-conditions-2026-10-07) | 2026-10-07 | 0 | 0 | 0 | — | 🟢 active |
 | [sandbox-setup-fails-with-sharing-violation-2026-10-08](https://github.com/sathiya-22/sandbox-setup-fails-with-sharing-violation-2026-10-08) | 2026-10-08 | 0 | 0 | 0 | — | 🟢 active |
 | [batch-method-doesn-t-support-openai-batch-api-2026-10-09](https://github.com/sathiya-22/batch-method-doesn-t-support-openai-batch-api-2026-10-09) | 2026-10-09 | 0 | 0 | 0 | — | 🟢 active |
+| [challenges-with-llm-provider-api-batching-2026-10-10](https://github.com/sathiya-22/challenges-with-llm-provider-api-batching-2026-10-10) | 2026-10-10 | 0 | 0 | 0 | — | 🟢 active |
