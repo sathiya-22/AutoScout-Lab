@@ -99,3 +99,4 @@
 {"full_name": "sathiya-22/high-token-usage-from-tool-calling-2026-10-12", "name": "high-token-usage-from-tool-calling-2026-10-12", "created": "2026-10-12", "topic": "High Token Usage from Tool Calling", "iterations": 0, "last_matured": null}
 {"full_name": "sathiya-22/agent-sandbox-cost-and-setup-2026-10-13", "name": "agent-sandbox-cost-and-setup-2026-10-13", "created": "2026-10-13", "topic": "Agent Sandbox Cost and Setup", "iterations": 0, "last_matured": null}
 {"full_name": "sathiya-22/inconsistent-checkpoint-persistence-2026-10-14", "name": "inconsistent-checkpoint-persistence-2026-10-14", "created": "2026-10-14", "topic": "Inconsistent Checkpoint Persistence", "iterations": 0, "last_matured": null}
+{"full_name": "sathiya-22/secure-llm-gateway-for-sensitive-data-2026-10-15", "name": "secure-llm-gateway-for-sensitive-data-2026-10-15", "created": "2026-10-15", "topic": "Secure LLM gateway for sensitive data", "iterations": 0, "last_matured": null}
