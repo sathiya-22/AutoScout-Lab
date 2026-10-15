@@ -1,6 +1,6 @@
 # AutoScout Fleet
 
-Auto-generated daily — 98 repos, 39 Gemini maturation passes, 16 Groq advancement passes. Last updated 2026-10-11.
+Auto-generated daily — 102 repos, 40 Gemini maturation passes, 16 Groq advancement passes. Last updated 2026-10-15.
 
 🟢 active = starred or <30 days old, rotates freely · 💤 dormant = revisited monthly
 
@@ -45,7 +45,7 @@ Auto-generated daily — 98 repos, 39 Gemini maturation passes, 16 Groq advancem
 | [multi-agent-coordination-and-communication-gaps-2026-08-07](https://github.com/sathiya-22/multi-agent-coordination-and-communication-gaps-2026-08-07) | 2026-08-07 | 0 | 1 | 0 | 2026-10-09 | 💤 dormant |
 | [need-for-better-web-data-cleaning-models-2026-08-08](https://github.com/sathiya-22/need-for-better-web-data-cleaning-models-2026-08-08) | 2026-08-08 | 0 | 1 | 0 | 2026-10-10 | 💤 dormant |
 | [challenges-in-cleaning-and-preparing-web-data-for-llms-2026-08-09](https://github.com/sathiya-22/challenges-in-cleaning-and-preparing-web-data-for-llms-2026-08-09) | 2026-08-09 | 0 | 1 | 0 | 2026-10-11 | 💤 dormant |
-| [integrating-ai-agents-with-web-applications-2026-08-10](https://github.com/sathiya-22/integrating-ai-agents-with-web-applications-2026-08-10) | 2026-08-10 | 0 | 0 | 0 | — | 💤 dormant |
+| [integrating-ai-agents-with-web-applications-2026-08-10](https://github.com/sathiya-22/integrating-ai-agents-with-web-applications-2026-08-10) | 2026-08-10 | 0 | 1 | 0 | 2026-10-15 | 💤 dormant |
 | [interoperability-and-compatibility-across-llm-providers-and-apis-2026-08-11](https://github.com/sathiya-22/interoperability-and-compatibility-across-llm-providers-and-apis-2026-08-11) | 2026-08-11 | 0 | 0 | 0 | — | 💤 dormant |
 | [lack-of-tools-for-human-reviewed-ai-written-code-2026-08-12](https://github.com/sathiya-22/lack-of-tools-for-human-reviewed-ai-written-code-2026-08-12) | 2026-08-12 | 0 | 0 | 0 | — | 💤 dormant |
 | [lack-of-reliable-ai-agent-safety-and-security-tooling-2026-08-13](https://github.com/sathiya-22/lack-of-reliable-ai-agent-safety-and-security-tooling-2026-08-13) | 2026-08-13 | 0 | 0 | 0 | — | 💤 dormant |
@@ -75,10 +75,10 @@ Auto-generated daily — 98 repos, 39 Gemini maturation passes, 16 Groq advancem
 | [agent-memory-storage-path-ignored-2026-09-07](https://github.com/sathiya-22/agent-memory-storage-path-ignored-2026-09-07) | 2026-09-07 | 0 | 0 | 0 | — | 💤 dormant |
 | [agent-server-initialization-and-startup-issues-2026-09-08](https://github.com/sathiya-22/agent-server-initialization-and-startup-issues-2026-09-08) | 2026-09-08 | 0 | 0 | 0 | — | 💤 dormant |
 | [environment-variable-configuration-for-agent-memory-2026-09-09](https://github.com/sathiya-22/environment-variable-configuration-for-agent-memory-2026-09-09) | 2026-09-09 | 0 | 0 | 0 | — | 💤 dormant |
-| [agent-memory-storage-configuration-issues-2026-09-11](https://github.com/sathiya-22/agent-memory-storage-configuration-issues-2026-09-11) | 2026-09-11 | 0 | 0 | 0 | — | 🟢 active |
-| [postgresql-checkpoint-ssl-errors-2026-09-12](https://github.com/sathiya-22/postgresql-checkpoint-ssl-errors-2026-09-12) | 2026-09-12 | 0 | 0 | 0 | — | 🟢 active |
-| [checkpoint-database-connection-issues-2026-09-13](https://github.com/sathiya-22/checkpoint-database-connection-issues-2026-09-13) | 2026-09-13 | 0 | 0 | 0 | — | 🟢 active |
-| [controlling-real-browser-sessions-for-agents-2026-09-14](https://github.com/sathiya-22/controlling-real-browser-sessions-for-agents-2026-09-14) | 2026-09-14 | 0 | 0 | 0 | — | 🟢 active |
+| [agent-memory-storage-configuration-issues-2026-09-11](https://github.com/sathiya-22/agent-memory-storage-configuration-issues-2026-09-11) | 2026-09-11 | 0 | 0 | 0 | — | 💤 dormant |
+| [postgresql-checkpoint-ssl-errors-2026-09-12](https://github.com/sathiya-22/postgresql-checkpoint-ssl-errors-2026-09-12) | 2026-09-12 | 0 | 0 | 0 | — | 💤 dormant |
+| [checkpoint-database-connection-issues-2026-09-13](https://github.com/sathiya-22/checkpoint-database-connection-issues-2026-09-13) | 2026-09-13 | 0 | 0 | 0 | — | 💤 dormant |
+| [controlling-real-browser-sessions-for-agents-2026-09-14](https://github.com/sathiya-22/controlling-real-browser-sessions-for-agents-2026-09-14) | 2026-09-14 | 0 | 0 | 0 | — | 💤 dormant |
 | [lack-of-visibility-into-ai-agent-reasoning-2026-09-15](https://github.com/sathiya-22/lack-of-visibility-into-ai-agent-reasoning-2026-09-15) | 2026-09-15 | 0 | 0 | 0 | — | 🟢 active |
 | [lack-of-robust-multi-agent-coordination-features-2026-09-16](https://github.com/sathiya-22/lack-of-robust-multi-agent-coordination-features-2026-09-16) | 2026-09-16 | 0 | 0 | 0 | — | 🟢 active |
 | [agent-client-session-error-handling-2026-09-17](https://github.com/sathiya-22/agent-client-session-error-handling-2026-09-17) | 2026-09-17 | 0 | 0 | 0 | — | 🟢 active |
@@ -104,3 +104,7 @@ Auto-generated daily — 98 repos, 39 Gemini maturation passes, 16 Groq advancem
 | [batch-method-doesn-t-support-openai-batch-api-2026-10-09](https://github.com/sathiya-22/batch-method-doesn-t-support-openai-batch-api-2026-10-09) | 2026-10-09 | 0 | 0 | 0 | — | 🟢 active |
 | [challenges-with-llm-provider-api-batching-2026-10-10](https://github.com/sathiya-22/challenges-with-llm-provider-api-batching-2026-10-10) | 2026-10-10 | 0 | 0 | 0 | — | 🟢 active |
 | [llm-provider-api-batching-limitations-2026-10-11](https://github.com/sathiya-22/llm-provider-api-batching-limitations-2026-10-11) | 2026-10-11 | 0 | 0 | 0 | — | 🟢 active |
+| [high-token-usage-from-tool-calling-2026-10-12](https://github.com/sathiya-22/high-token-usage-from-tool-calling-2026-10-12) | 2026-10-12 | 0 | 0 | 0 | — | 🟢 active |
+| [agent-sandbox-cost-and-setup-2026-10-13](https://github.com/sathiya-22/agent-sandbox-cost-and-setup-2026-10-13) | 2026-10-13 | 0 | 0 | 0 | — | 🟢 active |
+| [inconsistent-checkpoint-persistence-2026-10-14](https://github.com/sathiya-22/inconsistent-checkpoint-persistence-2026-10-14) | 2026-10-14 | 0 | 0 | 0 | — | 🟢 active |
+| [secure-llm-gateway-for-sensitive-data-2026-10-15](https://github.com/sathiya-22/secure-llm-gateway-for-sensitive-data-2026-10-15) | 2026-10-15 | 0 | 0 | 0 | — | 🟢 active |
